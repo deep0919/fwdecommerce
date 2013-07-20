@@ -1,0 +1,140 @@
+{*
+ * This file performs default get/put/post/delete behavior for entries.
+ * It's meant to simplify the entry view pattern.
+ *
+ *		Usage example:
+ *			{extend "default-entry" for="products"}
+ *			{$entry = $request.entry}
+ *			{$errors = $request.errors}
+ *			...
+ *}
+
+{extend "admin"}
+
+{* Get default entry params *}
+{if !$id}
+	{args $id $related $related_id}
+	{$request.id = $id}
+	{$request.related = $related}
+	{$request.related_id = $related_id}
+{/if}
+
+{* $for an API resource i.e. "products" *}
+{if $for}
+
+	{$resource = "/$for"}
+
+	{if !$record}
+		{if $related}
+			{$key = $related|singularize}
+		{else}
+			{$key = $for|singularize}
+		{/if}
+		{$record = $params[$key]}
+	{/if}
+{/if}
+
+{* Upload file? *}
+{if $request.post && $related == "upload"}
+
+	{foreach $params._files as $name => $file}
+		{$file.name = session_id()}
+		{$results[] = "$resource/$id/$related/$name"|put:$file}
+	{/foreach}
+	
+	{* JSON output *}
+	{$results|json_encode}
+	
+{* Default entry request *}
+{elseif $request.post && $record && $resource}
+
+	{* Put or post? *}
+	{if $related_id}
+
+		{put $record in "$resource/$id/$related/$related_id" $result}
+
+	{elseif $related}
+
+		{post $record in "$resource/$id/$related" $result}
+		{$related_id = $result.id}
+		{$posted_id = $related_id}
+
+	{elseif $id}
+
+		{put $record in "$resource/$id" $result}
+	{else}
+
+		{post $record in "$resource" $result}
+		{$id = $result.id}
+	{/if}
+	
+	{* Success? *}
+	{if !$result.errors}
+	
+		{if $record[':delete']}
+		
+			{flash notice="Deleted"}
+			
+		{elseif $record[':restore']}
+		
+			{flash notice="Restored"}
+		{else}
+		
+			{flash notice="Success"}
+		{/if}
+		
+		{* Send success email? *}
+		{if $success_email}
+			{$success_email.result = $result}
+			{post $success_email in "/emails"}
+		{/if}
+		
+		{if $params.refresh}
+			{redirect $request.uri}
+		{elseif $params.redirect}
+			{redirect $params.redirect}
+		{elseif $params.reload}
+			{if $related_id}
+				{redirect "$resource/{$request.action}/{$id}/{$related}/{$related_id}?tab={$params.tab}"}
+			{else}
+				{redirect "$resource/{$request.action}/{$id}?tab={$params.tab}"}
+			{/if}
+		{elseif $redirect_related}
+			{redirect "/$related/entry/{$related_id}?tab={$params.tab}"}
+		{else}
+			{redirect "$resource/entry/{$id}?tab={$params.tab}"}
+		{/if}
+		
+	{else}
+	
+		{* Assign result to $request for view to pick up *}
+		{$request.errors = $result.errors}
+		
+		{if $id}
+			{$request.entry = get("$resource/$id")}
+		{/if}
+		
+		{if $related_id}
+			{$request.related_entry = get("$resource/$id/$related/$related_id")}
+		{/if}
+		
+		{* Merge record params over entry? *}
+		{if $record}
+			{foreach $record as $key => $val}
+				{if $related}
+					{$request.related_entry[$key] = $val}
+				{else}
+					{$request.entry[$key] = $val}
+				{/if}
+			{/foreach}
+		{/if}
+	{/if}
+
+{elseif $resource && $id}
+
+	{if $related_id}
+		{$request.related_entry = get("$resource/$id/$related/$related_id")}
+	{/if}
+	
+	{$request.entry = get("$resource/$id")}
+{/if}

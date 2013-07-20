@@ -1,0 +1,10 @@
+{extend "admin"}
+
+<div class="list-container">
+	<div class="list-header well">
+		{render "search" for="categories"}
+	</div>
+	<ul class="list-results">
+		{render "categories/results"}
+	</ul>
+</div>

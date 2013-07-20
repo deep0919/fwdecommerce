@@ -1,0 +1,64 @@
+{$order = $payment.order}
+{$request.to = $order.account.email}
+{$request.from = "orders@{$request.host}"}
+{$request.subject = "Order Invoice #{$order.id}"}
+
+Invoice #{$order.id} -- {"  "|str_replace:" ":($order.date_created|date_format)}
+
+Items:
+======
+{foreach $order.items as $item}
+{$item.quantity} x {$item.name} @ {$item.price|money} = {($item.price*$item.quantity)|money}
+{if $item.items}
+{foreach $item.items as $i}
+  - {$i.quantity} x {$i.name}
+{/foreach}
+{/if}
+{/foreach}
+
+Sub total: {$order.sub_total|money}
+{if $order.discount_total}
+Discount: ({$order.discount_total|money}) {if $order.coupon_code}[{$order.coupon_code}]
+{/if}
+{/if}
+{if $order.credit_total}
+Credit: ({$order.credit_total|money})
+{/if}
+{if $order.tax_total}
+Sales tax: {$order.tax_total|money}
+{/if}
+{$order.shipping.method}: {$order.shipping_total|money}
+Total: {$order.grand_total|money}
+{if $order.credit_total}
+Credit: {$order.credit_total|money}
+Payment amount: {($order.grand_total-$order.credit_total)|money}
+{/if}
+
+Amount owed: {$payment.amount|money}
+
+Payment terms:
+==============
+{if $payment.date_due}
+Balance due by {$payment.date_due|date_format} (Net {(($payment.date_due|strtotime - $payment.date_created|strtotime)/60/60/24)|ceil})
+{else}
+Balance due upon receipt
+{/if}
+
+Ship to:
+=========
+{$order.shipping.address}
+{$order.shipping.city}, {$order.shipping.state} {$order.shipping.zip} {if $order.shipping.country}({$order.shipping.country}){/if}
+
+
+Bill to:
+========
+Name: {$order.account.name}
+E-mail: {$order.account.email}
+{if $order.account.phone}
+Phone: {$order.account.phone}
+{/if}
+
+{$order.billing.address}
+{if $order.billing.city}{$order.billing.city}, {/if}
+{if $order.billing.state}{$order.billing.state} {/if}{$order.billing.zip} {if $order.billing.country}({$order.billing.country}){/if}
+

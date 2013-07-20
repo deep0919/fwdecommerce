@@ -1,0 +1,119 @@
+{extend "admin"}
+
+{extend "default-entry" for="entries"}
+{$entry = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{$entry.name|default:$entry.title|default:"Entry #{$entry.id}"} <small>/ {$entry.channel.name}</small></h2>
+	</div>
+	<form class="view-body" method="post" action="/entries/entry/{$entry.id}" enctype="multipart/form-data">
+		<div class="view-content tabbable">
+			{render "messages"}
+			
+			{* Resolve version conflicts? *}
+			{if $version = $entry.version_conflicts[$request.account.id]}
+			
+				{$their_account = get("/accounts/{$version.version_by.theirs}")}
+				
+				{foreach $version as $field_id => $conflict}
+					{foreach $entry.channel.fields as $field}
+						{if $field.id != $field_id}
+							{continue}
+						{/if}
+						{$your_field = $field}
+						{$your_field.name = "{$your_field.name} <span class='label label-info'>Yours</span>"}
+						{$your_field.size = 2}
+						
+						{$their_field = $field}
+						{$their_field.name = "<span class='label label-success'>{$their_account.name|default:"Theirs"}</span>"}
+						{$their_field.size = 2}
+						
+						<div class="row">
+							{$entry[$field_id] = $conflict.yours}
+							{render "entries/field" field=$your_field entry=$entry error=$errors[$field.id]}
+							{$entry[$field_id] = $conflict.theirs}
+							{render "entries/field" field=$their_field entry=$entry disabled="true" error=$errors[$field.id]}
+						</div>
+					{/foreach}
+				{/foreach}
+				<input type="hidden" name="entry[version_conflicts][{$request.account.id}]" value="" />
+				<input type="hidden" name="entry[:version]" value="{$version.date_updated.theirs}" />
+				<input type="hidden" name="entry[version_by]" value="{$request.account.id}" />
+			{else}
+				<div class="entry-fields">
+					{foreach $entry.channel.fields as $field}
+						<div class="row">
+							{render "entries/field" field=$field entry=$entry error=$errors[$field.id]}
+						</div>
+					{/foreach}
+				</div>
+				<input type="hidden" class="version" name="entry[:version]" value="{$entry.date_updated}" />
+				<input type="hidden" name="entry[version_by]" value="{$request.account.id}" />
+			{/if}
+		</div>
+		<div class="view-footer actions">
+			{if $entry.version_conflicts[$request.account.id]}
+				<button type="submit" class="btn btn-primary">Save yours</button>
+				<button type="button" class="btn btn-danger confirm view-link" data-href="/entries/entry/{$entry.id}?entry[version_conflicts][{$request.account.id}]=" data-post="true">Discard yours</button>
+			{else}
+				<button type="submit" class="btn btn-primary">Save entry</button>
+			
+				{if $entry.channel.preview_url}
+					<button type="button" class="btn preview" data-href="{$entry.channel.preview_url}" data-target="_blank">Preview</button>
+				{/if}
+			{/if}
+			<button type="button" class="btn view-cancel">Close</button>
+			{if !$entry.is_deleted}
+				<a class="trash view-link" href="/entries/entry/{$entry.id}?entry[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+			{else}
+				<a class="trash view-link undo" href="/entries/entry/{$entry.id}?entry[:restore]=true" data-post="true">Undo <i class="icon-trash"></i></a>
+			{/if}
+		</div>
+	</form>
+</div>
+
+<script type="text/javascript">
+	
+	// Entry preview.
+	$('#view button.preview').click(function ()
+	{
+		$form = $(this).closest('form');
+		var preview_url = $(this).data('href');
+		
+		// Change field names.
+		$form.find('.view-content').find('input, select, textarea').each(function ()
+		{
+			$(this).data('name', $(this).attr('name'));
+			var preview_name = $(this).attr('name').replace(/entry/, 'entry[preview]');
+			$(this).attr('name', preview_name);
+			
+			var id = $(this).closest('.field').data('id');
+			
+			preview_url = preview_url.replace(new RegExp('\:'+id+''), $(this).val());
+		});
+		
+		$('#view').trigger('loading');
+		
+		// Post preview data.
+		$.post($form.attr('action'), $form.find('.entry-fields').find('input, select, textarea').serialize());
+		
+		// Wait half a second to save, then go to preview url.
+		setTimeout(function ()
+		{
+			$('#view').trigger('loading', [false]);
+			window.open(preview_url, "entry_preview");
+			
+		}, 500);
+		
+		// Restore field names.
+		$form.find('.view-content').find('input, select, textarea').each(function ()
+		{
+			$(this).attr('name', $(this).data('name'));
+		});
+		
+		return false;
+	});
+	
+</script>

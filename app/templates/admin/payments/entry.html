@@ -1,0 +1,31 @@
+{extend "admin"}
+
+{render "default-entry" for="payments"}
+{$payment = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Payment #{$payment.id} {if $payment.order_id}<small>/ Order #{$payment.order_id}</small>{/if}
+			<span class="label label-{if $payment.status|in:[sent,paid,success]}success{elseif $payment.status|in:[overdue,cancelled]}important{/if}">{$payment.status}</span></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="/payments/entry/{$payment.id}">
+		{render "messages"}
+		<div class="view-content">
+			{$payment|dump}
+		</div>
+		<div class="view-footer actions">
+		
+			<button type="button" class="btn view-cancel">Close</button>
+			
+			{if  !$payment.is_deleted}
+				<a class="trash view-link" href="/payments/entry/{$payment.id}?payment[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+			{else}
+				<a class="trash view-link undo" href="/payments/entry/{$payment.id}?payment[:restore]=true" data-post="true">Undo <i class="icon-trash"></i></a>
+			{/if}
+		</div>
+	</form>
+</div>

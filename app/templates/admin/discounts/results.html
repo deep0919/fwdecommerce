@@ -1,0 +1,37 @@
+{extend "admin"}
+
+{$query = [
+	search => $params.search,
+	where => $params.where,
+	page => $params.page
+]}
+
+{get $discounts from "/discounts" $query}
+
+{foreach $discounts as $discount}
+	<li>
+		<div class="headline">
+			<a class="list-item" href="/discounts/entry/{$discount.id}" id="item_discounts_{$discount.id}"> 
+				<span class="name">{$discount.name}</span>
+			</a>
+		</div>
+		<small>
+			{$discount.description|truncate:60}
+			{if $discount.codes|count > 0}
+				<b class="bull">&bull;</b> {pluralize "{$discount.codes|count} codes"} ({$discount.codes_used|count} uses)
+			{/if}
+			<span class="date">{$discount.date_created|age_date}</span>
+			<span class="labels">
+				{if $discount.is_valid}
+					<span class="label label-success">Valid</span>
+				{else}
+					<span class="label">Not valid</span>
+				{/if}
+			</span>
+		</small>
+	</li>
+{foreachelse}
+	<li class="empty">No discounts found</li>
+{/foreach}
+
+{render "loadmore" with=$discounts query=$query url="/discounts" autoload=true}

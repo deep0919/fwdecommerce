@@ -1,0 +1,39 @@
+{extend "admin"}
+	
+{extend "default-entry" for="channels"}
+
+{$channel = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>New channel</h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="">
+		<div class="view-content">
+			{render "messages"}
+			<div class="row">
+				<div class="field control-group span2">
+					<label>Channel name <span class="error">{$errors.name}</span></label>
+					<input type="text" name="channel[name]" value="{$channel.name}" />
+				</div>
+				{if $errors.slug}
+					<div class="field control-group span2">
+						<label>Channel slug <span class="error">{$errors.slug}</span></label>
+						<input type="text" name="channel[slug]" value="{$channel.slug}" />
+					</div>
+				{/if}
+			</div>
+		</div>
+		<div class="view-footer">
+			<div class="actions">
+				<button type="submit" class="btn btn-primary">Create channel</button>
+				<button type="button" class="btn view-cancel">Cancel</button>
+			</div>
+		</div>
+	</form>
+</div>
+

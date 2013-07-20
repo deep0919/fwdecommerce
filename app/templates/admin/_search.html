@@ -1,0 +1,165 @@
+{extend "admin"}
+
+{* Save query in session *}
+{$query = put("/session/search/$for", $params.search)}
+	
+<form id="search" class="form-search" method="post" action="">
+	<input type="text" class="query input-medium search-query " name="search" value="{$query}" placeholder="Search {$name|default:$for}" autocomplete="off" maxlength="50" />
+	{if $query}
+		<a class="clear" href="?search=">&times;</a>
+	{/if}
+	<div class="actions">
+	
+		{function action_link}
+			{$is_selected = "{if $action == $label || (!$action && $params@first)}selected{else}{/if}"}
+			<a class="action {$class} {if $is_selected}{$selected_class}{/if}" href="" data-query="action={$label}&{[where => $params.where]|http_build_query}" title="{$label|capitalize}">
+				{if $params.icon}
+					<i class="{$params.icon} {if $is_selected}icon-white{/if}"></i><span> {$label|capitalize}</span>
+				{else}
+					{$label|capitalize}
+				{/if}
+			</a>
+		{/function}
+		
+		{* By default, limit/group action buttons *}
+		{if !$action_limit && $action_limit !== false}
+		
+			{$action_limit = 4}
+		{/if}
+		{if $action_limit && $actions|count > $action_limit}
+			<div class="btn-group">
+				<a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+					<u class="current">{($action|capitalize|singularize)|default:"All"}</u> {$for}
+					<b class="caret"></b>
+				</a>
+				<ul class="dropdown-menu">
+					{foreach $actions as $label => $params}
+						<li>{action_link}</li>
+					{/foreach}
+				</ul>
+			</div>
+		{else}
+			{foreach $actions as $label => $params}
+				{action_link class="btn" selected_class="btn-primary"}
+			{/foreach}
+		{/if}
+	</div>
+</form>
+
+<script type="text/javascript">
+
+	// Search submit.
+	$('#search').submit(function (event, url, data)
+	{
+		$input = $('input.query', this);
+		
+		$('#list').each(function ()
+		{
+			if (url)
+			{
+				$('#search').attr('action', url);
+				$form = $('<form method="get" action="'+url+'"><input type="hidden" name="search" value="'+$input.val()+'" /></form>');
+				$form.appendTo('body').trigger('submit')
+				return true;
+			}
+			else
+			{	
+				// Use active action tab also.
+				if (qs = $('#search .actions a.selected').data('query'))
+				{
+					var nvpair = {};
+					var pairs = qs.split('&');
+					$.each(pairs, function(i, v)
+					{
+						var pair = v.split('=');
+						nvpair[unescape(pair[0])] = unescape(pair[1]);
+					});
+					
+					data = nvpair;
+				}
+				
+				// Data?
+				data = data || {};
+				data.search = $input.val();
+				
+				// Trigger list load.
+				$(this).trigger('load', [null, data]);
+			}
+		});
+		
+		return false;
+	});
+	
+	// Search clear.
+	$('#search .clear').click(function ()
+	{
+		$('#search input.query').val('');
+		$('#search').trigger('submit');
+		return false;
+	});
+	
+	// Focus on search input?
+	$('#search input.query').each(function ()
+	{
+		$search = $(this);
+		
+		$search.focus();
+	});
+	
+	// After ready.
+	$(document).ready(function ()
+	{
+		// Search context autocomplete.
+		$('#search input.query').typeahead({
+			source: [
+				'{$for}',
+				{foreach ['orders', 'products', 'accounts'] as $item}
+					{if $for != $item}'{$item}'{if !$item@last},{/if}{/if}
+				{/foreach}
+			],
+			matcher: function (item)
+			{
+				return true;
+			},
+			sorter: function (items)
+			{
+				return items;
+			},
+			highlighter: function (item)
+			{
+				if (item == '{$for}')
+				{
+					item = '<strong>'+item+'</strong>';
+				}
+				return '"'+this.query+'" in '+item;
+			}
+		})
+		.bind('autosearch', function (event, context)
+		{
+			var url = null;
+			if (context != '{$for}' && context != "")
+			{
+				url = '/'+context;
+			}
+			
+			$('#search').trigger('submit', [url]);
+		});
+	});
+	
+	// Search actions.
+	$('#search .actions a.action').click(function ()
+	{
+		$(this).closest('.actions').find('a').removeClass('selected');
+		$(this).addClass('selected');
+
+		if (!$(this).closest('.btn-group').length)
+		{
+			$(this).closest('.actions').find('a').removeClass('btn-primary').find('i').removeClass('icon-white');
+			$(this).addClass('btn-primary').find('i').addClass('icon-white');
+		}
+		
+		$('#search').trigger('submit');
+		return false;
+	});
+
+</script>

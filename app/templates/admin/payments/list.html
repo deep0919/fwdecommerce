@@ -1,0 +1,14 @@
+{extend "admin"}
+
+<div class="list-container">
+	<div class="list-header well">
+		{$actions = [all => [where => []]]}
+		{foreach get("/settings/payments") as $method => $settings}
+			{$actions[$settings.name|default:$method] = [where => [method => $method]]}
+		{/foreach}
+		{render "search" for="payments" action=$params.action actions=$actions}
+	</div>
+	<ul class="list-results">
+		{render "payments/results"}
+	</ul>
+</div>

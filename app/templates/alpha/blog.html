@@ -1,0 +1,102 @@
+{extend "session"}
+
+{args $entry_slug $preview}
+
+{if $entry_slug}
+
+	{* Single blog *}
+	{$blog = get("/entries/{$entry_slug|urlencode}", [
+		channel => "blogs",
+		status => "published"
+	])}
+	
+	{* If not found, 404 *}
+	{if !$blog}
+		{render "404"}
+	{/if}
+{else}
+
+	{* List of blogs *}
+	{$blogs = get("/entries", [
+		channel => "blogs",
+		status => "published",
+		page => $params.page,
+		limit => 10
+	])}
+{/if}
+
+{* Preview entry flag? *}
+{if $preview == "preview"}
+	{$blog = $blog.preview}
+{/if}
+
+{* Page properties for layout *}
+{$request.page_title = $blog.title}
+{$request.page_description = $blog.page_description|default:$blog.content|markdown|strip_tags|strip|truncate:200}
+{$request.page_keywords = $blog.page_keywords}
+
+{if $blog}
+
+	{* Single blog *}
+	<div class="blog-page row">
+		<div class="span8">
+			<div class="blog-entry">
+				<h1 class="blog-entry-header">
+					<a href="/blog/{$blog.slug}">{$blog.title}</a>
+					{if $preview}<small>Preview</small>{/if}
+				</h1>
+				<small class="blog-entry-meta">
+					Posted on {($blog.date_published|default:$blog.date_created|strtotime)|date_format}
+					{if $blog.author} by {$blog.author}{/if}
+				</small>
+				<article class="blog-entry-content">
+					{* Content with markdown *}
+					{$blog.content|markdown}
+					
+					<p><a href="/blog">Back to blog</a></p>
+				</article>
+			</div>
+		</div>
+	</div>
+	
+{elseif $blogs}
+
+	{* List of blogs *}
+	<div class="blog-page row">
+		<div class="span8">
+		{foreach $blogs as $blog}
+			<div class="blog-entry">
+				<h1 class="blog-entry-header">
+					<a href="/blog/{$blog.slug}">{$blog.title}</a>
+				</h1>
+				<small class="blog-entry-meta">
+					Posted on {($blog.date_published|default:$blog.date_created|strtotime)|date_format}
+					{if $blog.author} by {$blog.author}{/if}
+				</small>
+				<article class="blog-entry-content">
+					{* Split content by 'MORE' comment *}
+					{$parts = "<!--MORE-->"|explode:$blog.content}
+					
+					{* Content with markdown *}
+					{$parts.0|markdown}
+					
+					{* Read more? *}
+					{if $parts.1}
+						<p><a href="/blog/{$blog.slug}">Read More</a></p>
+					{/if}
+				</article>
+			
+				{* Simple pagination *}
+				<div class="blog-pagination{if $blogs.pages|count == 1}hidden{/if}">
+					{if $blogs.pages|count > $blogs.current}
+						<a href="/blog?page={$blogs.current+1}" class="pull-left">&larr; Older</a>
+					{/if}
+					{if $blogs.current > 1}
+						<a href="/blog?page={$blogs.current-1}" class="pull-right">Newer &rarr;</a>
+					{/if}
+				</div>
+			</div>
+		{/foreach}
+		</div>
+	</div>
+{/if}

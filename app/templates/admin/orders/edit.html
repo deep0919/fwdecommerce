@@ -1,0 +1,351 @@
+{extend "admin"}
+
+{extend "default-entry" for="orders"}
+
+{$order = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{if $order.shipping && $order.billing}Edit{else}Complete{/if} order <small>/ Order #{$order.id}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body edit" method="post" action="/orders/edit/{$order.id}">
+		{render "messages"}
+		<div class="view-content">
+			<fieldset>
+				<div class="row">
+					<div class="field control-group span2">
+						<label>Name <span class="error">{$errors.name}</span></label>
+						<input type="text" name="order[name]" value="{$order.name}" />
+					</div>
+					<div class="field control-group span2">
+						<label>E-mail address <span class="error">{$errors.email}</span></label>
+						<input type="text" name="order[email]" value="{$order.email}" />
+					</div>
+					<div class="field control-group span2">
+						<label>Phone (optional) <span class="error">{$errors.phone}</span></label>
+						<input type="text" name="order[phone]" value="{$order.phone|default:$order.account.phone}" />
+					</div>
+				</div>
+				<div class="row">
+					<label class="checkbox span4">
+						<input type="checkbox" name="order[:email]" value="true" {if $order.status == "incomplete"}checked="checked"{/if} />
+						Send receipt to e-mail above?
+					</label>
+				</div>
+			</fieldset>
+			<fieldset>
+				<h3>Shipping information</h3>
+				<div class="row">
+					<div class="field control-group span3">
+						<label>Shipping method <span class="error">{$errors.shipping.method}</span></label>
+						{$shipping_method = $order.shipping.method}
+						{$methods = $order.cart.shipping_methods}
+						<select name="order[shipping][method]" class="shipping_method">
+							{foreach $methods as $method}
+								<option {if $method.name == $shipping_method}{$selected = true}selected="selected"{/if} data-price="{$method.price}">{$method.name}</option>
+							{/foreach}
+							{if $shipping_method && !$selected}
+								<option selected="selected">{$shipping_method}</option>
+							{/if}
+						</select>
+					</div>
+					<div class="field control-group span1">
+						<label>Price $ <span class="error">{$errors.shipping_total}</span></label>
+						<input type="text" name="order[shipping_total]" value="{if $order.shipping}{$order.shipping_total}{/if}" class="numeric shipping_total" />
+					</div>
+				</div>
+				<div class="row">
+					<div class="field control-group span3">
+						<label>Shipping address <span class="error">{$errors.shipping.address}</span></label>
+						<input type="text" name="order[shipping][address]" value="{$order.shipping.address}" />
+					</div>
+				</div>
+				<div class="row">
+					<div class="field control-group span2">
+						<label>Shipping city <span class="error">{$errors.shipping.city}</span></label>
+						<input type="text" name="order[shipping][city]" value="{$order.shipping.city}" />
+					</div>
+					<div class="field control-group span1">
+						<label>State <span class="error">{$errors.shipping.state}</span></label>
+						<input type="text" name="order[shipping][state]" value="{$order.shipping.state}" />
+					</div>
+					<div class="field control-group span1">
+						<label>Zip <span class="error">{$errors.shipping.zip}</span></label>
+						<input type="text" name="order[shipping][zip]" value="{$order.shipping.zip}" />
+					</div>
+				</div>
+			</fieldset>
+			<fieldset>
+				<h3>Billing information</h3>
+				<div class="row">
+					<div class="field control-group span3">
+						<label>Billing method<span class="error">{$errors.billing.method}</span></label>
+						<select name="order[billing][method]" class="billing_method">
+							<option value="none">None</option>
+							{foreach get("/settings/payments") as $method => $settings}
+								{* Restrict billing method to certain account role(s)? *}
+								{if $settings.roles|is_array && (($order.account.roles|is_array && !$order.account.roles|array_intersect:$settings.roles) || !$order.account.roles|is_array && ($order.billing.method != $method))}
+									{continue}
+								{/if}
+								<option value="{$method}" {if $order.billing.method == $method}selected="selected"{/if}>{$settings.name|default:$method|ucfirst}</option>
+							{/foreach}
+						</select>
+					</div>
+				</div>
+			</fieldset>
+			<fieldset class="billing_method stripe {if $order.billing.method != "stripe"}hidden{/if}">
+				{if $order.billing.stripe}
+					<h4><span class="label label-success">Card on file:{if $order.billing.stripe}
+						{$order.billing.stripe.card.type} {$order.billing.stripe.card.last4}
+						(Expires: {$order.billing.stripe.card.exp_month}/{$order.billing.stripe.card.exp_year})
+					{/if}</span></h4>
+				{else}
+					<h4>Add credit card to order</h4>
+				{/if}
+				<div class="row">
+					<div class="field control-group span3">
+						<label>Credit card number</label>
+						<input type="text" class="cardnum" autocomplete="off" />
+					</div>
+				</div>
+				<div class="row">
+					<div class="field control-group span1">
+						<label>Expire date</label>
+						<input type="text" class="cardexp_month" autocomplete="off" placeholder="MM" />
+					</div>
+					<div class="field control-group span1">
+						<label>&nbsp;</label>
+						<input type="text" class="cardexp_year" autocomplete="off" placeholder="YYYY" />
+					</div>
+					<div class="field control-group span1">
+						<label>CVC code</label>
+						<input type="text" class="cardcode" autocomplete="off" />
+					</div>
+				</div>
+				{* Auto first payment? *}
+				{if !$order.payments && $order.status == "incomplete"}
+					<div class="row">
+						<div class="span4">
+							<label class="checkbox">
+								<input type="checkbox" name="order[auto_payment]" value="true" />
+								Auto-pay balance on order completion?
+							</label>
+						</div>
+					</div>
+				{/if}
+			</fieldset>
+			<fieldset class="billing_method invoice {if $order.billing.method != "invoice"}hidden{/if}">
+				{* No fields needed for invoice? *}
+			</fieldset>
+			<fieldset class="billing_method stripe invoice">
+				<div class="row">
+					<div class="field control-group span3">
+						<label>Billing name <span class="error">{$errors.billing.name}</span></label>
+						<input type="text" name="order[billing][name]" class="name" value="{$order.billing.name}" />
+					</div>
+				</div>
+				<div class="row">
+					<div class="field control-group span3">
+						<label>Billing address <span class="error">{$errors.billing.address}</span></label>
+						<input type="text" name="order[billing][address]" class="address" value="{$order.billing.address}" />
+					</div>
+				</div>
+				<div class="row">
+					<div class="field control-group span2">
+						<label>Billing city <span class="error">{$errors.billing.city}</span></label>
+						<input type="text" name="order[billing][city]" class="city" value="{$order.billing.city}" />
+					</div>
+					<div class="field control-group span1">
+						<label>State <span class="error">{$errors.billing.state}</span></label>
+						<input type="text" name="order[billing][state]" class="state" value="{$order.billing.state}" />
+					</div>
+					<div class="field control-group span1">
+						<label>Zip <span class="error">{$errors.billing.zip}</span></label>
+						<input type="text" name="order[billing][zip]" class="zip" value="{$order.billing.zip}" />
+					</div>
+				</div>
+			</fieldset>
+		</div>
+		<div class="view-footer actions">
+			<input type="hidden" name="order[:recalc]" value="true" />
+			<button type="submit" class="btn btn-primary">Save order</button>
+			<button type="button" class="btn view-back">Cancel</button>
+		</div>
+	</form>
+</div>
+
+<!-- Stripe -->
+<script type="text/javascript" src="https://js.stripe.com/v1/"></script>
+<script type="text/javascript">
+
+	// Submit edit order.
+	$('form.edit').submit(function ()
+	{
+		$form = $(this);
+		
+		// Form locked?
+		if (window.form_locked)
+		{
+			return false;
+		}
+		
+		// Clear field errors.
+		$form.find('input, select, textarea').trigger('error_clear');
+		
+		// Loading animation.
+		$('#view .view-content').addClass('loading');
+			
+		$loader = $('#view .loader');
+		
+		if ($loader.length == 0)
+		{
+			$loader = $('<div class="loader"></div>').appendTo('#view');
+		}
+		
+		$loader.spin({
+			speed: 3,
+			length: 5,
+			width: 2,
+			radius: 6
+		});
+		
+		// Submitting stripe?
+		if ($('select.billing_method', this).val() == "stripe")
+		{
+			var card = {
+				number: $form.find('input.cardnum').val(),
+				cvc: $form.find('input.cardcode').val(),
+				exp_month: $form.find('input.cardexp_month').val(),
+				exp_year: $form.find('input.cardexp_year').val(),
+				name: $form.find('input.name').val(),
+				address_line1: $form.find('input.address').val(),
+				address_state: $form.find('input.state').val(),
+				address_zip: $form.find('input.zip').val()/*,
+				address_country: $form.find('input.country').val()*/
+			};
+			
+			// Any field will trigger token request.
+			if (card.number || card.cvc || card.exp_month || card.exp_year)
+			{
+				// Need stripe?
+				if (!$form.data('stripe') || $form.data('card') != $.param(card))
+				{
+					// Stripe identity.
+					{$settings = get("/settings/payments")}
+					Stripe.setPublishableKey('{$settings.stripe.publishable_key}');
+				
+					// Validate basic inputs.
+					var card_invalid = null;
+					if (!Stripe.validateCardNumber(card.number))
+					{
+						card_invalid = 'input.cardnum';
+					}
+					else if (!Stripe.validateExpiry(card.exp_month, card.exp_year))
+					{
+						card_invalid = 'input.cardexp_month';
+					}
+					else if (!Stripe.validateCVC(card.cvc))
+					{
+						card_invalid = 'input.cardcode';
+					}
+					
+					// Invalid card field?
+					if (card_invalid)
+					{
+						$form.find(card_invalid).trigger('error', ['!']);
+						$('#view').trigger('loaded');
+					}
+					else
+					{
+						try {
+							// Get stripe.
+							Stripe.createToken(card, function (status, response)
+							{
+								window.form_locked = false;
+								
+								// Error from stripe?
+								if (response.error)
+								{
+									$form.data('stripe', null);
+									
+									$form.find('input.cardnum').trigger('error', ['('+response.error.message+')']);
+									
+									$('#view').trigger('loaded');
+								}
+								// Validated token!
+								else
+								{
+									// Remember good card values.
+									$form.data('card', $.param(card));
+									
+									// Convert/save stripe response and re-submit.
+									$form.data('stripe', {
+										order: { billing: { stripe: response }}
+									});
+									
+									$form.trigger('submit');
+								}
+							});
+							
+							// Lock the form while getting stripe.
+							window.form_locked = true;
+						}
+						catch (err)
+						{
+							$('#view').trigger('loaded');
+							$form.find('input.cardnum').trigger('error', ['('+err+')']);
+							window.form_locked = false;
+						}
+					}
+					
+					return false;
+				}
+			}
+		}
+		
+		// Add stripe data to form.
+		if ($form.data('stripe'))
+		{
+			$form.attr('action', $form.attr('action')+'?'+$.param($form.data('stripe')));
+		}
+	});
+	
+	// Change billing method.
+	$('form.edit select.billing_method').change(function ()
+	{
+		$('form.edit fieldset.billing_method').hide().find('input, textarea, select').attr('disabled', true);
+		$('form.edit fieldset.billing_method.'+$(this).val()).show().find('input, textarea, select').attr('disabled', false);
+	})
+	.trigger('change');
+	
+	// Change shipping method.
+	$('form.edit select.shipping_method').change(function ()
+	{
+		$('form.edit input.shipping_total').attr('placeholder', $('option:selected', this).data('price'));
+	})
+	.trigger('change');
+	
+	// Checkout field error.
+	$('form.edit input').live('error', function (event, error)
+	{
+		$(this).closest('.field').addClass('error');
+		
+		if (error)
+		{
+			$(this).closest('.field').find('label').append(' <span class="error">'+error+'</span>');
+			$(this).focus();
+		}
+	});
+	
+	// Clear field error.
+	$('form.edit input').live('error_clear', function ()
+	{
+		$(this).closest('.field').removeClass('error')
+			.find('label .error').remove();
+	});
+
+</script>

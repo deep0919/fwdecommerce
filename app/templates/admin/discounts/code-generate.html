@@ -1,0 +1,135 @@
+{extend "admin"}
+
+{* Generate codes? *}
+{if $params.generate.num_codes > 10000}
+
+	{* Too many codes! *}
+	
+{elseif $request.post && $params.generate}
+
+	{$codes = []}
+	{$counter = 0}
+	{$serial = $params.generate.serial_start}
+	
+	{$slen = $params.generate.serial_start|strlen}
+	
+	{while $counter < $params.generate.num_codes}
+	
+		{* Increment serial? *}
+		{if is_numeric($params.generate.serial_start)}
+			{$serial = $serial+1}
+		{/if}
+		
+		{* Pad serial? *}
+		{if $serial|strlen < $slen}
+			{$serial = $serial|str_pad:$slen:"0":0}
+		{/if}
+		
+		{* Code starts with serial *}
+		{$code = $serial}
+		
+		{* Append random chars *}
+		{for $start=1 to $params.generate.num_chars}
+			{$code = "{$code}{65|rand:90|chr}"}
+		{/for}
+		
+		{* Key by code => serial *}
+		{$codes[$code] = $serial}
+		
+		{* Break up in sets of...? *}
+		{if $params.generate.num_codes > $params.generate.sets_of && $codes|count == $params.generate.sets_of}
+			{$sets[] = $codes}
+			{$codes = []}
+		{/if}
+		
+		{$counter = $counter+1}
+	{/while}
+	
+	{* Remainer of set? *}
+	{if $sets && $codes|count}
+		{$sets[] = $codes}
+		{$codes = []}
+	{/if}
+{/if}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Generate codes</h2>
+		<div class="actions">
+			<a class="btn view-back" href="">Back</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="/discounts/code-generate">
+		<div class="view-content tabbable">
+			{render "messages"}
+			{if !$codes && !$sets}
+				{if $params.generate.num_codes > 10000}
+					<div class="alert alert-error">
+						You can't generate more than 10,000 codes at a time
+					</div>
+				{/if}
+				<div class="tab-content">
+					<div class="tab-pane details {if !$params.tab}active{/if}">
+						<div class="row">
+							<div class="field control-group span1">
+								<label>How many? <span class="error">{$errors.num_codes}</span></label>
+								<input type="text" name="generate[num_codes]" value="{$params.generate.num_codes|default:1}" class="numeric" />
+							</div>
+							<div class="field control-group span1">
+								<label>Start serial <span class="error">{$errors.serial_start}</span></label>
+								<input type="text" name="generate[serial_start]" value="{$params.generate.serial_start|default:1000}" class="numeric" />
+							</div>
+							<div class="field control-group span1">
+								<label># Letters <span class="error">{$errors.num_chars}</span></label>
+								<input type="text" name="generate[num_chars]" value="{$params.generate.num_chars|default:5}" class="numeric" />
+							</div>
+							<div class="field control-group span1">
+								<label>Sets of <span class="error">{$errors.sets_of}</span></label>
+								<input type="text" name="generate[sets_of]" value="{$params.generate.sets_of}" class="numeric" />
+							</div>
+						</div>
+					</div>
+				</div>
+			{else}
+				<div class="row">
+					{if $sets}
+						<div class="field span2">
+							<label>Generated {$params.generate.num_codes} in sets of {$params.generate.sets_of}</label>
+							{foreach $sets as $codes}
+								<textarea rows="{$codes|count+1}">{foreach $codes as $code => $serial}{$code}{if !$serial@last}{"\n"}{/if}{/foreach}</textarea>
+							{/foreach}
+						</div>
+						{if $params.generate.serial_start}
+							<div class="field span2">
+								<label>Serial numbers</label>
+								{foreach $sets as $codes}
+									<textarea rows="{$codes|count+1}">{foreach $codes as $code => $serial}{$serial}{if !$serial@last}{"\n"}{/if}{/foreach}</textarea>
+								{/foreach}
+							</div>
+						{/if}
+					{else}
+						<div class="field span2">
+							<label>Generated {$codes|count} codes</label>
+							<textarea rows="{$codes|count+1}">{foreach $codes as $code => $serial}{$code}{if !$serial@last}{"\n"}{/if}{/foreach}</textarea>
+						</div>
+						{if $params.generate.serial_start}
+							<div class="field span2">
+								<label>Serial numbers</label>
+								<textarea rows="{$codes|count+1}">{foreach $codes as $code => $serial}{$serial}{if !$serial@last}{"\n"}{/if}{/foreach}</textarea>
+							</div>
+						{/if}
+					{/if}
+				</div>
+			{/if}
+		</div>
+		<div class="view-footer actions">
+			{if !$codes}
+				<button type="submit" class="btn btn-primary">Generate codes</button>
+				<button type="button" class="btn view-cancel">Close</button>
+			{else}
+				<button type="button" class="btn btn-primary view-link" data-href="/discounts/code-generate?{$params|http_build_query}" data-post="true">Re-generate</button>
+				<button type="button" class="btn view-link" data-href="/discounts/code-generate?{$params|http_build_query}">Back</button>
+			{/if}
+		</div>
+	</form>
+</div>

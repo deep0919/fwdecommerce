@@ -1,0 +1,25 @@
+{extend "admin"}
+
+{args $channel_slug}
+{get $channel from "/channels/$channel_slug"}
+
+<div class="list-container">
+	<div class="list-header well">
+		{if $channel.fields_by_id.categories.type == select}
+			{$action_field = "categories"}
+		{elseif $channel.fields_by_id.status.type == select}
+			{$action_field = "status"}
+		{/if}
+		{if $action_field}
+			{$actions = [all => [where => []]]}
+			{foreach $channel.fields_by_id[$action_field].values as $key => $val}
+				{$key = (($key|is_numeric) ? $val : $key)}
+				{$actions[$key] = [where => ["{$action_field}" => $key]]}
+			{/foreach}
+		{/if}
+		{render "search" for="entries" name=$channel_slug|spacify|lower action=$params.action actions=$actions}
+	</div>
+	<ul class="list-results">
+		{render "entries/results" channel=$channel}
+	</ul>
+</div>

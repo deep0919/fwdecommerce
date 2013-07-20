@@ -1,0 +1,134 @@
+{extend "admin"}
+
+{* Format select values. @TODO: Replace this with a better UI pattern *}
+{if $request.post && $params.field.values|is_string}
+
+	{$values = explode("\n", $params.field.values)}
+	{$params.field.values = []}
+	
+	{foreach $values as $key => $val}
+		{if $val == ""}{continue}{/if}
+		{$parts = preg_split("/[\s]*\=\>[\s]*/", $val)}
+		{$value = $parts[0]|trim}
+		{$label = ($parts[1]) ? $parts[1] : $value}
+		{$params.field.values[$value] = $label|trim}
+	{/foreach}
+{/if}
+
+{extend "default-entry" for="channels"}
+{$id = $request.id}
+{$channel = $request.entry}
+{$field_id = $request.related_id}
+{$field = $request.related_entry}
+{$errors = $request.errors}
+
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{$field.name|default:"New field"} <small>/ {$channel.name}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body field" method="post" action="/channels/field/{$channel.id}/fields{if $field_id}/{$field_id}{/if}">
+		<div class="view-content">
+			{render "messages"}
+			<div class="row">
+				<div class="field control-group span2">
+					<label>Field name <span class="error">{$errors.name}</span></label>
+					<input type="text" name="field[name]" value="{$field.name}" />
+				</div>
+				<div class="field control-group span2">
+					<label>Field key {if !$field_id}(Optional){/if} <span class="error">{$errors.id}</span></label>
+					<input type="text" name="field[id]" value="{$field.id|default:$field.name|underscore}" />
+				</div>
+			</div>
+			<div class="row">
+				<div class="field control-group span2">
+					<label>Field type <span class="error">{$errors.type}</span></label>
+					<select name="field[type]" class="field_type">
+						<option value="text" {if $field.type == "text"}selected="selected"{/if}>Text</option>
+						<option value="textarea" {if $field.type == "textarea"}selected="selected"{/if}>Textarea</option>
+						<option value="html" {if $field.type == "html"}selected="selected"{/if}>HTML/Markdown</option>
+						<option value="number" {if $field.type == "number"}selected="selected"{/if}>Number</option>
+						<option value="select" {if $field.type == "select"}selected="selected"{/if}>Select</option>
+						<option value="channel" {if $field.type == "channel"}selected="selected"{/if}>Channel</option>
+						<option value="image" {if $field.type == "image"}selected="selected"{/if}>Image</option>
+					</select>
+				</div>
+				<div class="field control-group span1">
+					<label>Sort order <span class="error">{$errors.sort}</span></label>
+					<input type="text" name="field[sort]" value="{$field.sort}" />
+				</div>
+			</div>
+			<div class="row options field_type_select">
+				<div class="field control-group span3">
+					<label>Select values (one per line, value => label) <span class="error">{$errors.values}</span></label>
+					<textarea name="field[values]" rows="5">{if $field.values|is_string}{$field.values|htmlspecialchars}{else}{foreach $field.values as $key => $value}{if $key != $value}{$key} => {/if}{str_replace("\n", "", $value)}{if !$value@last}{"\n"}{/if}{/foreach}{/if}</textarea>
+				</div>
+				<div class="field control-group span2">
+					<label>Default value <span class="error">{$errors.default}</span></label>
+					<input type="text" name="field[default]" value="{$field.default}" />
+				</div>
+			</div>
+			<div class="row options field_type_channel">
+				<div class="field control-group span2">
+					<label>Channel <span class="error">{$errors.channel_id}</span></label>
+					<select name="field[channel_id]">
+						{foreach "/channels"|get:[limit => null] as $ch}
+							<option value="{$ch.id}" {if $field.channel_id == $ch.id}selected="selected"{/if}>{$ch.name}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>
+			<div class="row options field_type_select field_type_channel">
+				<div class="field control-group span2">
+					<label>Multi-select? <span class="error">{$errors.multi}</span></label>
+					<select name="field[multi]">
+						<option value="false" {if $field.multi == "false"}selected="selected"{/if}>No</option>
+						<option value="true" {if $field.multi == "true"}selected="selected"{/if}>Yes</option>
+					</select>
+				</div>
+			</div>
+			<div class="row options field_type_text field_type_number">
+				<div class="field control-group span2">
+					<label>Size (1-4) <span class="error">{$errors.size}</span></label>
+					<input type="text" name="field[size]" value="{$field.size|default:4}" />
+				</div>
+			</div>
+			<div class="row options field_type_text field_type_textarea field_type_html field_type_number">
+				<div class="field control-group span2">
+					<label>Hint text (optional) <span class="error">{$errors.placeholder}</span></label>
+					<input type="text" name="field[placeholder]" value="{$field.placeholder}" />
+				</div>
+			</div>
+			<!--<div class="row options field_type_text field_type_textarea field_type_html field_type_number">
+				<div class="field control-group span2">
+					<label>Static? (Uneditable) <span class="error">{$errors.static}</span></label>
+					<select name="field[static]">
+						<option value="false" {if $field.static == false}selected="selected"{/if}>No</option>
+						<option value="true" {if $field.static == true}selected="selected"{/if}>Yes</option>
+					</select>
+				</div>
+			</div>-->
+		</div>
+		<div class="view-footer actions">
+			<button type="submit" class="btn btn-primary">Save field</button>
+			<button type="button" class="btn view-back">Back</button>
+			{if $field}
+				<a class="trash confirm view-link" href="/channels/field/{$channel.id}/fields/{$field_id}?field[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+			{/if}
+		</div>
+	</form>
+</div>
+
+<script type="text/javascript">
+
+	$('form.field select.field_type').change(function ()
+	{
+		$('form.field .row.options').hide().find('input, textarea, select').attr('disabled', true);
+		$('form.field .row.field_type_'+$('option:selected', this).val()).show().find('input, textarea, select').attr('disabled', false);
+	})
+	.trigger('change');
+
+</script>

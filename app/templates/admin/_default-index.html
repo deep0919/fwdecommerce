@@ -1,0 +1,23 @@
+{extend "admin"}
+
+{if $context = $for}
+
+	{args $id}
+
+	<div class="row">
+		<div class="span12" id="content">
+			<div class="outline"></div>
+			<div class="row">
+				<div class="span7" id="list" data-url="/{$context}/list{if $id}/{$id}{/if}">
+					{render "{$context}/list"}
+				</div>
+				<div class="span5" id="info" data-url="/{$context}/info{if $id}/{$id}{/if}">
+					<div id="view"></div>
+					<div class="info-container">
+						{render "{$context}/info"}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}

@@ -1,0 +1,14 @@
+{extend "admin"}
+
+<div class="list-container">
+	<div class="list-header well">
+		{$actions = [all => [where => []]]}
+		{foreach get("/settings/emails") as $type => $settings}
+			{$actions[$type] = [where => [type => $type]]}
+		{/foreach}
+		{render "search" for="emails" action=$params.action actions=$actions}
+	</div>
+	<ul class="list-results">
+		{render "emails/results"}
+	</ul>
+</div>

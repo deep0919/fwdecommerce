@@ -1,0 +1,51 @@
+{extend "admin"}
+
+{extend "default-entry" for="products"}
+
+{$product = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>New product</h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body new" method="post" action="/products/new">
+		<div class="view-content">
+			{render "messages"}
+			<div class="row">
+				<div class="field name control-group span2">
+					<label>Product name <span class="error">{$errors.name}</span></label>
+					<input type="text" name="product[name]" value="{$product.name}" />
+				</div>
+				<div class="field price control-group span1">
+					<label>Price <span class="error">{if $errors.price}!{/if}</span></label>
+					<input type="text" name="product[price]" value="{$product.price}" class="numeric" />
+				</div>
+				{if $errors.slug}				
+					<div class="field name control-group span4">
+						<label>Slug <span class="error">{$errors.slug}</span></label>
+						<input type="text" name="product[slug]" value="{$product.slug}" />
+					</div>
+				{/if}
+			</div>
+			<div class="row">
+				<div class="field name control-group span2">
+					<label>Bundle of other products? <span class="error">{$errors.is_bundle}</span></label>
+					<select name="product[is_bundle]" class="bundle">
+						<option value="false">No</option>
+						<option value="true" {if $product.is_bundle == "true"}selected="selected"{/if}>Yes</option>
+					</select>
+				</div>
+			</div>
+		</div>
+		<div class="view-footer">
+			<div class="actions">
+				<button type="submit" class="btn btn-primary">Create product</button>
+				<button type="button" class="btn view-cancel">Cancel</button>
+			</div>
+		</div>
+	</form>
+</div>

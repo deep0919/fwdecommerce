@@ -1,0 +1,92 @@
+<html>
+<body>
+<p>
+<strong>Order #{$order.id}</strong> 
+&mdash; {$order.date_created|date_format}
+at {$order.date_created|date_format:"%I:%M %p"}
+</p>
+
+<ul>
+{foreach $order.items as $item}
+	<li>
+		{$item.quantity} x {$item.name} {if $item.variant}({$item.variant.name}){/if} @ {$item.price|money} = {($item.price*$item.quantity)|money}
+		{if $item.items}
+			<ul>
+				{foreach $item.items as $i}
+		    		<li>{$i.quantity} x {$i.name}</li>
+		    	{/foreach}
+			</ul>
+		{/if}
+	</li>
+{/foreach}
+</ul>
+
+<p>
+Sub total: {$order.sub_total|money}<br />
+{if $order.discount_total}
+	Discount: ({$order.discount_total|money})
+	{if $order.coupon_code}
+		[{$order.coupon_code}]
+	{/if}
+	<br />
+{/if}
+{if $order.credit_total}
+	Credit: ({$order.credit_total|money})<br />
+{/if}
+{if $order.tax_total}
+	Sales tax: {$order.tax_total|money}<br />
+{/if}
+{$order.shipping.method}: {$order.shipping_total|money}<br/ >
+<strong>Total: {$order.grand_total|money}</strong><br />
+{if $order.credit_total}
+	<strong>Credit: {$order.credit_total|money}</strong><br/ >
+	<strong>Payment amount: {($order.grand_total-$order.credit_total)|money}</strong><br />
+{/if}
+</p>
+
+{* Out of stock? *}
+{foreach $order.items as $item}
+	{if $item.out_of_stock}
+		{$out_of_stock_items[{$item.id}] = $item}
+	{/if}
+	{if $item.items}
+		{foreach $item.items as $i}
+			{if $i.out_of_stock}
+				{$out_of_stock_items[{$i.id}] = $i}
+			{/if}
+		{/foreach}
+	{/if}
+{/foreach}
+{if $out_of_stock_items}
+	<p><strong>Note: {pluralize "{$out_of_stock_items|count} Items"} Temporarily Out of Stock:</strong></p>
+	<ol>
+		{foreach $out_of_stock_items as $item}
+			<li>{$item.name}</li>
+		{/foreach}
+	</ol>
+{/if}
+
+<p>
+Name: {$order.name}<br />
+E-mail: {$order.email}<br />
+{if $order.phone}
+	Phone: {$order.phone}<br />
+{/if}
+<br />
+<strong>Shipping: {$order.shipping.method}</strong><br />
+{$order.shipping.address}<br />
+{if $order.shipping.city}{$order.shipping.city},{/if}
+{if $order.shipping.state}{$order.shipping.state}{/if}
+{if $order.shipping.zip}{$order.shipping.zip}{/if}
+{if $order.shipping.country}({$order.shipping.country}){/if}<br />
+<br />
+<strong>Billing: {if $order.billing.method == "card"}{$order.billing.card.type} {$order.billing.card.last4}{else}{$order.billing.method|ucfirst}{/if}</strong><br />
+{$order.billing.address}<br />
+{if $order.billing.city}{$order.billing.city},{/if}
+{if $order.billing.state}{$order.billing.state}{/if}
+{if $order.billing.zip}{$order.billing.zip}{/if}
+{if $order.billing.country}({$order.billing.country}){/if}<br />
+<br />
+</p>
+</body>
+</html>

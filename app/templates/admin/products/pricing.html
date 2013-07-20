@@ -1,0 +1,101 @@
+<fieldset class="pricing">
+	{$has_price_tiers = $product.pricing|count}
+	<input type="hidden" class="has_price_tiers"
+		name="product[pricing]" value="" {if $has_price_tiers}disabled="disabled"{/if} />
+
+	<div class="row price_tier_labels {if !$has_price_tiers}hidden{/if}">
+		<div class="field span1">
+			<label>Qty above</label>
+		</div>
+		<div class="field span1">
+			<label>Price $</label>
+		</div>
+	</div>
+	{function price_tier tpl=false id="NUM" labels=true}
+		<div class="row price_tier {if $tpl}tpl hidden disabled{/if}">
+			<div class="field control-group span1">
+				<input type="text" name="product[pricing][{$id}][quantity]" value="{$value.quantity}" class="qty numeric {if $tpl}disabled{/if}" />
+			</div>
+			<div class="field control-group span1">
+				<input type="text" name="product[pricing][{$id}][price]" value="{$value.price}" class="price numeric {if $tpl}disabled{/if}" />
+			</div>
+			<div class="field control-group span2">
+				<a class="btn remove" href=""><i class="icon-minus-sign"></i></a>
+			</div>
+			<!-- Restrict tier by role. Un-comment to enable.
+			<input type="hidden" name="product[pricing][{$id}][role]" value="{$value.role}" class="{if $tpl}disabled{/if}" />
+			-->
+		</div>
+	{/function}
+
+	{price_tier tpl=true}
+
+	{foreach $product.pricing as $pid => $pricing}
+		{price_tier id=$pid value=$pricing labels=$pricing@first}
+	{/foreach}
+	
+	{if $has_pricing_tiers || $enabled}
+		<a class="btn btn-success add_price_tier" href=""><i class="icon-plus-sign icon-white"></i> Add price tier</a><br />
+		<br />
+	{/if}
+</fieldset>
+<script type="text/javascript">
+	
+	// Click "add price tier".
+	$('a.add_price_tier').click(function ()
+	{
+		var num = $('.row.price_tier').length;
+		var qty = parseInt($('.row.price_tier:last input.qty').val());
+		
+		// Clone tpl tier.
+		$row = $('.row.price_tier.tpl').clone(true)
+			.removeClass('tpl').removeClass('disabled')
+			.find('input, select').attr('disabled', false)
+			.closest('.price_tier');
+		
+		// Append after last tier.
+		$('.row.price_tier:last').after($row);
+		
+		// Replace NUM in template with order number.
+		$row.find('input, select').each(function ()
+		{
+			$(this).attr('name', $(this).attr('name').replace(/NUM/, num));
+		});
+		$row.fadeIn();
+		
+		// Increment qty value.
+		$row.find('input.qty').val(isNaN(qty) ? 1 : qty+1);
+		
+		// Cheap way to move page down.
+		$(this).focus();
+		$row.find('input.price').focus();
+
+		// At least 1 tier?
+		if ($('.row.price_tier').length > 1)
+		{
+			$('.row.price_tier_labels').show();
+			$('input.has_price_tiers').attr('disabled', true);
+		}
+		
+		return false;
+	});
+
+	// Click "remove" price tier.
+	$('.row.price_tier a.remove').click(function ()
+	{
+		$row = $(this).closest('.row.price_tier');
+		
+		// Remove tier.
+		$row.remove();
+
+		// Last tier?
+		if ($('.row.price_tier').length == 1)
+		{
+			$('.row.price_tier_labels').hide();
+			$('input.has_price_tiers').attr('disabled', false);
+		}
+		
+		return false;
+	});
+
+</script>

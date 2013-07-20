@@ -1,0 +1,40 @@
+{"Content-Type: text/xml"|header}
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://{$request.host}</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  {foreach get("/products", [limit => null, fields => "slug", is_active => true]) as $product}
+  <url>
+    <loc>http://{$request.host}/products/{$product.slug}</loc>
+    <lastmod>{$product.date_updated|default:$product.date_created}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+  {/foreach}
+  {foreach get("/categories", [limit => null, fields => "slug"]) as $category}
+  <url>
+    <loc>http://{$request.host}/categories/{$category.slug}</loc>
+    <lastmod>{$category.date_updated|default:$category.date_created}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.75</priority>
+  </url>
+  {/foreach}
+  {foreach get("/entries", [channel => "blogs", fields => "slug", status => "published"]) as $blog}
+  <url>
+    <loc>http://{$request.host}/blog/{$blog.slug}</loc>
+    <lastmod>{$blog.date_updated|default:$blog.date_created}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  {/foreach}
+  {foreach get("/entries", [channel => "pages", fields => "slug", status => "published"]) as $page}
+  <url>
+    <loc>http://{$request.host}/pages/{$page.slug}</loc>
+    <lastmod>{$page.date_updated|default:$page.date_created}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  {/foreach}
+</urlset>

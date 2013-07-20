@@ -1,0 +1,7 @@
+{$request.from = "orders@{$request.host}"}
+{$request.subject = "Alert: Overdue Payment"}
+
+Order #{$payment.order_id}
+Account: {$payment.account.name}
+Balance: {$payment.amount|money}
+Due date: {$payment.date_due|date_format}

@@ -1,0 +1,48 @@
+{extend "admin"}
+
+{extend "default-entry" for="discounts"}
+
+{$discount = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>New discount</h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="">
+		<div class="view-content">
+			{render "messages"}
+			<div class="row">
+				<div class="field control-group span2">
+					<label>Discount name <span class="error">{$errors.name}</span></label>
+					<input type="text" name="discount[name]" value="{$discount.name}" />
+				</div>
+				<div class="field control-group span2">
+					<label>Apply valid discount to... <span class="error">{$errors.is_coupon}</span></label>
+					<select name="discount[apply_to]">
+						<!--<option value="all">All new orders</option>-->
+						<option value="code" {if $params.discount.apply_to == "code"}selected="selected"{/if}>Coupon code</option>
+						<!--<option value="role" {if $params.discount.apply_to == "role"}selected="selected"{/if}>Account role</option>
+						<option value="account" {if $params.discount.apply_to == "account"}selected="selected"{/if}>Specific account</option>-->
+					</select>
+				</div>
+			</div>
+			<div class="row">
+				<div class="field control-group span4">
+					<label>Public description <span class="error">{$errors.description}</span></label>
+					<textarea name="discount[description]" cols="2">{$discount.description|htmlspecialchars}</textarea>
+				</div>
+			</div>
+		</div>
+		<div class="view-footer">
+			<div class="actions">
+				<button type="submit" class="btn btn-primary">Create discount</button>
+				<button type="button" class="btn view-cancel">Cancel</button>
+			</div>
+		</div>
+	</form>
+</div>
+

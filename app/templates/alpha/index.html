@@ -1,0 +1,17 @@
+{extend "session"}
+
+{* Get latest products *}
+{$featured_products = "/products"|get:[
+	is_active => true,
+	limit => 8
+]}
+
+<div class="content-banner">
+	<!-- Creatuve banner content goes here -->
+</div>
+
+<div class="category-list">
+	
+	{* Render featured products *}
+	{render "product-list" with=$featured_products}
+</div>

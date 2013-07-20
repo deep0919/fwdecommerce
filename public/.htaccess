@@ -1,0 +1,4 @@
+# Rewrite all non-file requests
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ /start.php [QSA,L]

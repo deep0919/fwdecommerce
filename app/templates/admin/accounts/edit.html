@@ -1,0 +1,83 @@
+{extend "admin"}
+
+{extend "default-entry" for="accounts"}
+
+{$account = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Edit Account <small>/ {$account.name}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body edit" method="post" action="/accounts/edit/{$account.id}">
+		{render "messages"}
+		<div class="view-content">
+			<div class="row">
+				<div class="field control-group span2">
+					<label>E-mail <span class="error">{$errors.email}</span></label>
+					<input type="text" name="account[email]" value="{$account.email|escape}" />
+				</div>
+				<div class="field control-group span2">
+					<label>Name <span class="error">{$errors.name}</span></label>
+					<input type="text" name="account[name]" value="{$account.name|escape}" />
+				</div>
+			</div>
+			<div class="row">
+				<div class="field control-group span2">
+					<label>Password {if !$request.post}{if $account.password}(reset){else}(optional){/if}{/if}
+						<span class="error">{$errors.password}</span></label>
+					<input type="password" name="account[password_reset]" value="" />
+				</div>
+				<div class="field control-group span2">
+					<label>Phone (optional)<span class="error">{$errors.phone}</span></label>
+					<input type="text" name="account[phone]" value="{$account.phone|escape}" />
+				</div>
+			</div>
+			{if !$account.password && is_array($account.roles) && in_array("admin", $account.roles)}
+				<div class="row">
+					<label class="checkbox span4">
+						<input type="checkbox" name="account[:auth]" value="true" />
+						Send auth e-mail?
+					</label>
+				</div>
+			{/if}
+			<br />
+			<input type="hidden" name="account[roles]" value="" />
+			<table class="table table-bordered table-condensed checkboxes">
+				<tr>
+					<th colspan="2">Roles</th>
+				</tr>
+				{foreach get("/settings/roles") as $role => $opt}
+					{$role = (is_numeric($role) && is_string($opt)) ? $opt : $role}
+					{if !is_numeric($role)}
+						<tr>
+							<td class="checkbox">
+								<input type="checkbox" name="account[roles][]" value="{$role}" {if is_array($account.roles) && in_array($role, $account.roles)}checked="checked"{/if} id="role_{$role}" />
+							</td>
+							<td>
+								<label for="role_{$role}">{$role|spacify|capitalize}
+								{if $opt.description}
+									<em class="muted">&mdash; {$opt.description}</em>
+								{/if}
+								</label>
+							</td>
+						</tr>
+					{/if}
+				{/foreach}
+			</table>
+			<div class="row">
+				<div class="field control-group span4">
+					<label><span class="label label-info">Private notes</span></label>
+					<textarea name="account[notes]" rows="5">{$account.notes|escape}</textarea>
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<button type="submit" class="btn btn-primary">Save account</button>
+			<button type="button" class="btn view-back">Cancel</button>
+		</div>
+	</form>
+</div>

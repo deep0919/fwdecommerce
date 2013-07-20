@@ -1,0 +1,97 @@
+{extend "session"}
+
+{args $product_slug}
+
+{* Get product by slug *}
+{if $product = "/products/{$product_slug|urlencode}"|get}
+
+	{* Set page title to product name *}
+	{$request.page_title = $product.name}
+	
+	{* Set page description *}
+	{$product_description = $product.description|markdown}
+	{$request.page_description = $product_description|strip_tags|trim:200}
+
+	{* Get products in the same category as primary *}
+	{if $product.primary_category_id}
+	
+		{$category = "/categories/{$product.primary_category_id}"|get}
+	
+		{* Note: Feel free to change this query *}
+		{$related_products = "/products"|get:[
+			id => ['$ne' => $product.id],
+			category_ids => $product.primary_category_id,
+			is_active => true,
+			limit => 4
+		]}
+	{/if}
+{else}
+
+	{* Not found *}
+	{render "404"}
+{/if}
+
+<div class="product-page">
+	<div class="row">
+		<div class="product-page-details span6 pull-right">
+			<div class="product-page-header">
+				<h1>{$product.name}</h1>
+				<div class="product-page-price">
+					{$product.price|money}
+				</div>
+			</div>
+			<div class="product-page-form">
+				<form class="cart-add" method="post" action="/cart">
+					{if $product.variants}
+						<div class="row">
+							<div class="form-field span3">
+								<select name="item[variant_id]">
+									{foreach $product.variants as $id => $variant}
+										<option value="{$id}">{$variant.name}</option>
+									{/foreach}
+								</select>
+							</div>
+						</div>
+					{/if}
+					<input type="hidden" name="item[id]" value="{$product.id}" />
+					<input type="hidden" name="item[quantity]" value="1" />
+					<button type="submit" class="btn btn-large btn-success">Add to cart</button>
+					<!-- Optional: Quantity input style
+					<div class="row">
+						<div class="field span1">
+							<label>Quantity</label>
+							<input type="text" name="item[quantity]" value="1" />
+						</div>
+						<div class="field span2">
+							<label>&nbsp;</label>
+							<button type="submit" class="btn btn-success">Add to cart</button>
+						</div>
+					</div>-->
+				</form>
+			</div>
+			<div class="product-page-description">
+				<h5>Description</h5>
+				{$product_description}
+			</div>
+		</div>
+		<div class="product-page-image span6 pull-left">
+			<img src="{image for=$product width=440 height=440}" class="default" />
+			<div class="product-page-imgalt">
+				{foreach $product.images as $image}
+					{$src = image([for=>$product, name=>$image.name, width=>75, height=>75])}
+					{if $src}<img src="{$src}" />{/if}
+				{/foreach}
+			</div>
+		</div>
+	</div>
+</div>
+
+{* Show related products? *}
+{if $related_products}
+	<div class="category-list product-page-related">
+		<div class="category-list-header">
+			<b>Related Items</b>
+		</div>
+		{render "product-list" with=$related_products}
+	</div>
+{/if}

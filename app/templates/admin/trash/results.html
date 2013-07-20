@@ -1,0 +1,32 @@
+{extend "admin"}
+
+{$query = [
+	search => $params.search,
+	where => $params.where,
+	page => $params.page
+]}
+
+{get $trash from "/trash" $query}
+
+{foreach $trash as $doc}
+	<li>
+		<div class="headline">
+			<a class="list-item" href="/trash/entry{$doc.deleted_uri}" id="item_trash_{$trash.id}"> 
+				<span class="name">
+					{$doc.deleted_uri}
+					{if $doc_name = ($doc.name|default:$doc.title|default:$doc.subject|default:$doc.email|default:$doc.code)|escape}
+						<small>&mdash; {$doc_name}</small>
+					{/if}
+				</span>
+			</a>
+		</div>
+		<small>
+			Document has {$doc|count} fields
+			<span class="date">{$doc.date_deleted|age_date}</span>
+		</small>
+	</li>
+{foreachelse}
+	<li class="empty">None found</li>
+{/foreach}
+
+{render "loadmore" with=$trash query=$query url="/trash"}

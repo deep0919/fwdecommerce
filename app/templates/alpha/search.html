@@ -1,0 +1,25 @@
+{extend "session"}
+
+{* Search all products *}
+{$products = "/products"|get:[
+	search => $params.q,
+	is_active => true,
+	limit => null
+]}
+
+<div class="category-list">
+
+	<div class="category-list-header">
+		<h1>Search for "{$params.q|escape}" found {pluralize "{$products|count} items"}</h1>
+	</div>
+	
+	{* Render category products *}
+	{render "product-list" with=$products}
+</div>
+
+<script type="text/javascript">
+
+	// Auto-focus on search query.
+	$('.header-nav-search input.query').focus();
+	
+</script>

@@ -1,0 +1,18 @@
+{extend "admin"}
+
+<div class="list-container">
+	<div class="list-header well">
+		{render "search" for="orders" action=$params.action action_limit=false actions=[
+			all => [where => []],
+			pending => [icon => "icon-time", where => [status => "pending"]],
+			ready => [icon => "icon-check", where => [status => "ready"]],
+			shipped => [icon => "icon-plane", where => [status => "shipped"]],
+			cancelled => [icon => "icon-ban-circle", where => [status => "cancelled"]],
+			returned => [icon => "icon-share-alt", where => [status => "returned"]],
+			hold => [icon => "icon-exclamation-sign", where => [status => "hold"]]
+		]}
+	</div>
+	<ul class="list-results with-images">
+		{render "orders/results"}
+	</ul>
+</div>

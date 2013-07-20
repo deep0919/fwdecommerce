@@ -1,0 +1,45 @@
+#
+# This is a local environment config file.
+# Its purpose is to override config options in app.yml
+# with settings specific to this application environment -- 
+# (i.e. dev, test, production).
+#
+# If you prefer to use a single config file, feel free
+# move these options to app.yml and remove this.
+#
+app:
+  debug: false
+
+# Database config
+mongo:
+  user: root
+  pass: root
+  host: localhost
+  port: 80
+  database: 
+
+# Cache config
+cache:
+  enabled: false
+  backend: memcache
+  host: localhost
+  port: 80
+
+# Session config
+session:
+  use_cache: true
+
+#
+# Override app settings for local environment
+#
+#   For example:
+#
+#     settings:
+#       payments:
+#         card:
+#           gateway: stripe
+#           secret_key: ...
+#           publishable_key: ...
+#
+settings:
+

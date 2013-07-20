@@ -1,0 +1,42 @@
+{if $rule.type == "product"}
+	{* Product *}
+	{$product = get("/products/{$rule.product_id}")}
+	<a class="view-link" href="/products/entry/{$rule.product_id}">{$product.name}</a>
+	{if $rule.quantity || $rule.add || $rule.min_quantity}
+		<br />
+		<span class="muted">
+			{if $rule.quantity}&bull; limit {$rule.quantity}{/if}
+			{if $rule.add}&bull; add to cart{/if}
+			{if $rule.min_quantity}&bull; min qty {$rule.min_quantity}{/if}
+		</span>
+	{/if}
+{elseif $rule.type == "category"}
+	{* Category *}
+	{$category = get("/categories/{$rule.category_id}")}
+	<a class="view-link" href="/products/entry/{$rule.product_id}">{$category.name}</a>
+	<br />
+	<span class="muted">
+		{if $rule.quantity}&bull; limit {$rule.quantity}{/if}
+		{if $rule.limit > 0}&bull; any {pluralize "{$rule.limit} item"}{else}&bull; any item{/if}
+		{if $rule.min_quantity}&bull; min qty {$rule.min_quantity}{/if}
+	</span>
+{elseif $rule.type == "shipping"}
+	{* Shipping *}
+	{$rule.method|default:"Any shipping method"}
+	{if $rule.min_total}
+		<br />
+		<span class="muted">
+			{if $rule.min_total}&bull; min total {$rule.min_total|money}{/if}
+		</span>
+	{/if}
+{else}
+	{* Sub Total *}
+	{if $rule.min_total}
+		<br />
+		<span class="muted">
+			{if $rule.min_total}&bull; min total {$rule.min_total|money}{/if}
+		</span>
+	{else}
+		&mdash;
+	{/if}
+{/if}

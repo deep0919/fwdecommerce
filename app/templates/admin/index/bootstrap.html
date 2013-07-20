@@ -1,0 +1,50 @@
+{extend "admin" requires_login=false}
+
+{* Already have an account? *}
+{if get("/accounts", [roles => "admin"])}
+	{redirect "/login"}
+{/if}
+	
+{* Create admin? *}
+{if $params.account}
+
+	{* Append admin role *}
+	{$params.account['roles'][] = "admin"}
+	
+	{* Post new account *}
+	{$account = post("/accounts", $params.account)}
+
+	{if $account.errors}
+		{$errors = $account.errors}
+	{else}
+
+		{* Save account ID in session *}
+		{$session.account_id = $account.id}
+		{redirect "/accounts"}
+	{/if}
+{/if}
+
+<div class="row">
+	<div class="span3">
+		{render "messages"}
+		<form class="login well" action="" method="post">
+			<fieldset>
+				<div class="field control-group">
+					<label>Admin name <span class="errors">{$errors.name}</span></label>
+					<input type="text" name="account[name]" value="{$params.account.name}" />
+				</div>
+				<div class="field control-group">
+					<label>Admin e-mail <span class="errors">{$errors.email}</span></label>
+					<input type="text" name="account[email]" value="{$params.account.email}" />
+				</div>
+				<div class="field control-group">
+					<label>Admin password <span class="errors">{$errors.password}</span></label>
+					<input type="password" name="account[password]" value="" />
+				</div>
+			</fieldset>
+			<div class="actions">
+				<button type="submit" class="btn btn-primary">Create account</button>
+			</div>
+		</form>
+	</div>
+</div>

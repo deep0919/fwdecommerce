@@ -1,0 +1,56 @@
+{extend "admin"}
+
+{* This is intended to convert all account encrypted passwords (deprecated)
+ * to hashed passwords (blowfish) and save the result. encrypt methods
+ * will be completely removed in favor of hashed methods. *}
+ 
+{$encrypted_accounts = get("/accounts", [
+	search => [password => "___"]
+])}
+
+{if $request.post && $encrypted_accounts}
+	{foreach $encrypted_accounts as $account}
+		{$result = $account|put:[
+			password_reset => $account.password|decrypt,
+			password_orig => $account.password
+		]}
+		{if !$result.errors}
+			{$updated_count++}
+		{else}
+			{$result.account = $account}
+			{$accounts_with_errors[] = $result}
+		{/if}
+	{/foreach}
+{/if}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Edit Account <small>/ {$account.name}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body edit" method="post" action="/accounts/hash-encrypt">
+		<div class="view-content">
+			{if $encrypted_accounts.count}
+				<p>{"{$encrypted_accounts.count} accounts"|pluralize} have encrypted passwords.</p>
+				{if $request.post}
+					{if $accounts_with_errors}
+						<p>Unable to convert these accounts</p>
+						{$accounts_with_errors|dump}
+					{else}
+						<p>You just converted {"{$updated_count} accounts"|pluralize}</p>
+					{/if}
+				{/if}
+			{else}
+				<p>There are no accounts with encrypted passwords.</p>
+			{/if}
+		</div>
+		<div class="view-footer actions">
+			{if $encrypted_accounts.count}
+				<button type="submit" class="btn btn-primary">Convert and hash passwords</button>
+			{/if}
+			<button type="button" class="btn view-cancel">Close</button>
+		</div>
+	</form>
+</div>

@@ -1,0 +1,39 @@
+{extend "admin"}
+
+{$query = [
+	search => $params.search,
+	where => $params.where,
+	page => $params.page
+]}
+
+{get $accounts from "/accounts" $query}
+
+{foreach $accounts as $account}
+	<li>
+		<div class="headline">
+			<a class="list-item" href="/accounts/entry/{$account.id}" id="item_accounts_{$account.id}"> 
+				<span class="name">{$account.name}</span>
+			</a>
+		</div>
+		<small>
+			{$account.email}
+			{if $account.ip_address}
+				<b class="bull">&bull;</b> <span class="ip">{$account.ip_address}</span>
+			{/if}
+			<span class="hidden">
+			</span>
+			<span class="date">
+				{$account.date_created|age_date}
+			</span>
+			<span class="labels">						
+				{foreach $account.roles as $role}
+					<span class="label label-info">{$role}</span>
+				{/foreach}
+			</span>
+		</small>
+	</li>
+{foreachelse}
+	<li class="empty">No accounts found</li>
+{/foreach}
+
+{render "loadmore" with=$accounts query=$query url="/accounts"}

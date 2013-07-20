@@ -1,0 +1,57 @@
+{args $token}
+
+{if $token}
+
+	{* Get account for auth token *}
+	{get $account from "/accounts" [
+		where => [auth_token => $token],
+		':one' => true
+	]}
+
+	{if $account && $params.account}
+		
+		{* Add account password *}
+		{$account = put($account, [
+			password => $params.account.password,
+			role => admin,
+			auth_token => null
+		])}
+		
+		{if !$account.errors}
+		
+			{* Add email to params *}
+			{$params.account.email = $account.email}
+			
+			{* Login *}
+			{extend "index/login"}
+		{/if}
+	{/if}
+{/if}
+
+{if !$account}
+	{flash error="Account not found"}
+{/if}
+
+<div class="row">
+	<div class="span3">
+		{render "messages"}
+		{if $account}
+			<form class="login well" action="" method="post">
+				<fieldset>
+					<h3 style="margin-bottom: 10px;">{$account.email|truncate:20}</h3>
+					<div class="field control-group">
+						<label>Your name <span class="errors">{$account.errors.name}</span></label>
+						<input type="text" name="account[name]" value="{$account.name|default:$params.account.name}" />
+					</div>
+					<div class="field control-group">
+						<label>Create a password <span class="errors">{$account.errors.password}</span></label>
+						<input type="password" name="account[password]" value="{$params.account.password}" />
+					</div>
+				</fieldset>
+				<div class="actions">
+					<button type="submit" class="btn btn-primary">Enter</button>
+				</div>
+			</form>
+		{/if}
+	</div>
+</div>

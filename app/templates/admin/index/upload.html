@@ -1,0 +1,8 @@
+{extend "admin"}
+
+{args $context $id}
+
+{render "default-entry" related="upload" for=$context id=$id}
+
+{* No layout *}
+{$request.layout = null}

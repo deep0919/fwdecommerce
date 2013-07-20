@@ -1,0 +1,41 @@
+{*
+ * Alpha: A forward starter template
+ *
+ * Copyright 2012 Forward.
+ * Licensed under the Apache License v2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * This file contains session logic and other behaviors
+ * that should run before a page request. It should be extended
+ * by other template files that need to use these behaviors.
+ *
+ * Use it in a template file like this:
+ * 
+ * 	{extend "session"}
+ *
+ * 	(Note: The {extend} helper truncates page output, therefore
+ *		any output created by this page will not be visible)
+ *}
+
+{* Do this only once *}
+{if !$request.session_handled}
+
+	{* Setup test data? Note: You may delete this after testing *}
+	{$setup = get("/entries/--setup")}
+	{if !$setup || $params.setup|in:[test,yes,no]}
+		{$request.layout = "setup"}
+		{$params.setup = yes}
+	{/if}
+
+	{* Active cart? *}
+	{if $session.cart_id}
+		{$request.cart = get("/carts/{$session.cart_id}")}
+	{/if}
+	
+	{* Quick-reference for content blocks *}
+	{foreach get("/channels/blocks/entries") as $block}
+		{$request["{$block.slug|underscore}_block"] = $block}
+	{/foreach}
+	
+	{$request.session_handled = true}
+{/if}

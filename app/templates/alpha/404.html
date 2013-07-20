@@ -1,0 +1,24 @@
+{extend "session"}
+
+{*
+ * This page is loaded automatically when a view matching
+ * {$request.uri} can't be found (based on route config).
+ * 
+ * You can also use it to capture and respond to dynamic URLs,
+ * for example: "mysite.com/[product-slug]"
+ *
+ *		{args $slug}
+ *		{if $product = "/products/{$slug}"|get}
+ *			{render "products" with=$product}
+ *			{return 200}
+ *		{elseif $category = "/categories/{$slug}"|get}
+ *			{render "categories" with=$category}
+ *			{return 200}
+ *		{/if}
+ *}
+
+<div class="content-page">
+	<h1 class="content-page-header">404 Page Not Found</h1>
+</div>
+
+{return 404}

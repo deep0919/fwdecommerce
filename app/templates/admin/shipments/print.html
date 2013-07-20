@@ -1,0 +1,187 @@
+{extend "admin"}
+
+{* No layout *}
+{$request.layout = null}
+
+{* Extend default shipment entry *}
+{extend "default-entry" for="shipments"}
+{$shipment = $request.entry}
+
+<h1>Packing Slip</h1>
+<p class="meta">
+	Order #{$shipment.order_id} &mdash; Placed {$shipment.order.date_created|date_format}
+</p>
+
+<div class="details shipping">
+	<h3>Shipping Information</h3>
+	<table class="info">
+		<tr>
+			<td class="label">Name:</td>
+			<td class="value">{$shipment.name|escape}</td>
+		</tr>
+		<tr>
+			<td class="label">Address:</td>
+			<td class="value">{$shipment.address|escape}</td>
+		</tr>
+		{if $shipment.city}
+			<tr>
+				<td class="label">City:</td>
+				<td class="value">{$shipment.city|escape}</td>
+			</tr>
+		{/if}
+		{if $shipment.state}
+			<tr>
+				<td class="label">State:</td>
+				<td class="value">{$shipment.state|escape}</td>
+			</tr>
+		{/if}
+		<tr>
+			<td class="label">Zip:</td>
+			<td class="value">{$shipment.zip|escape}</td>
+		</tr>
+		{if $shipment.phone}
+			<tr>
+				<td class="label">Phone:</td>
+				<td class="value">{$shipment.phone|escape}</td>
+			</tr>
+		{/if}
+		<tr>
+			<td class="label">Method:</td>
+			<td class="value">{$shipment.method}</td>
+		</tr>
+	</table>
+</div>
+
+<div class="details billing">
+	<h3>Billing Information</h3>
+	<table class="info">
+		<tr>
+			<td class="label">Name:</td>
+			<td class="value">{$shipment.order.billing.name|default:$shipping.name|escape}</td>
+		</tr>
+		<tr>
+			<td class="label">Address:</td>
+			<td class="value">{$shipment.order.billing.address|escape}</td>
+		</tr>
+		{if $shipment.order.billing.city}
+			<tr>
+				<td class="label">City:</td>
+				<td class="value">{$shipment.order.billing.city|escape}</td>
+			</tr>
+		{/if}
+		{if $shipment.order.billing.state}
+			<tr>
+				<td class="label">State:</td>
+				<td class="value">{$shipment.order.billing.state|escape}</td>
+			</tr>
+		{/if}
+		<tr>
+			<td class="label">Zip:</td>
+			<td class="value">{$shipment.order.billing.zip|escape}</td>
+		</tr>
+		{if $shipment.order.billing.phone}
+			<tr>
+				<td class="label">Phone:</td>
+				<td class="value">{$shipment.order.billing.phone|escape}</td>
+			</tr>
+		{/if}
+	</table>
+</div>
+
+<table id="items" cellspacing="0">
+	<tr>
+		<th class="item">Item</th>
+		<th class="qty">Quantity</th>
+		<th class="price">Price / each</th>
+	</tr>
+	{foreach $shipment.order.items as $item}
+		<tr>
+			<td class="item">
+				{$item.name}
+				{if $item.items}
+					<ul>
+						{foreach $item.items as $i}
+							<li>{$i.quantity}&times; {$i.name}</li>
+						{/foreach}
+					</ul>
+				{/if}
+			</td>
+			<td class="qty">{$item.quantity}</td>
+			<td class="price">
+				{$item.price|money}
+			</td>
+		</tr>
+	{/foreach}
+</table>
+
+<style>
+	body {
+		font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+		font-size: 16px;
+		line-height: 22px;
+		color: #333;
+	}
+	h1 {
+		border-bottom: 1px solid #ccc;
+		line-height: 60px;
+	}
+	.meta {
+		position: absolute;
+		top: 20px;
+		right: 10px;
+	}
+	.details {
+		display: inline-block;
+		margin: 20px 0px;
+	}
+	.details.shipping {
+		margin-right: 80px;
+	}
+	.details h3 {
+		font-size: 20px;
+		font-weight: normal;
+		margin: 0 0 20px 0;
+	}
+	.details p {
+		margin-top: 0;
+	}
+	table.info {
+		padding-left: 20px;
+	}
+	table.info td.label {
+		text-align: right;
+		font-weight: bold;
+		padding-right: 20px;
+	}
+	table#items {
+		margin: 20px 0;
+		width: 100%;
+		border-top: 1px solid #ddd;
+	}
+	table#items th,
+	table#items td {
+		border-bottom: 1px solid #ccc;
+		padding: 10px 0;
+	}
+	table#items th {
+		text-align: left;
+	}
+	table#items td {
+		padding: 10px 0;
+	}
+	table#items th.qty,
+	table#items td.qty {
+		text-align: center;
+		font-weight: bold;
+	}
+	table#items th.price,
+	table#items td.price {
+		text-align: right;
+	}
+	table#items ul {
+		margin-bottom: 0;
+	}
+	table#items ul li {
+		line-height: 25px;
+	}
+</style>

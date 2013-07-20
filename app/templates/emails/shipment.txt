@@ -1,0 +1,24 @@
+{$request.to = $shipment.order.email}
+{$request.from = "orders@{$request.host}"}
+{$request.subject = "Order #{$shipment.order.id} Shipped"}
+
+Order #{$shipment.order.id} shipped on {$shipment.date_created|date_format}
+
+{$shipment.method} {$shipment.tracking}
+
+Tracking link:
+==============
+{$shipment.tracking_info.url}
+
+Items in shipment:
+==================
+{foreach $shipment.items as $item}
+{$item.quantity} x {$item.name}
+{/foreach}
+
+Shipping to:
+============
+{$shipment.name}
+{$shipment.address}
+{$shipment.city}, {$shipment.state} {$shipment.zip} {if $shipment.country}({$shipment.country}){/if}
+

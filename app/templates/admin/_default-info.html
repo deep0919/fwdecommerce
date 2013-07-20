@@ -1,0 +1,21 @@
+{extend "admin"}
+
+{if $context = $for}
+
+	{args $id}
+
+	{if $new !== false}
+		<div class="info-header">
+			<a class="btn view-link" href="/{$context}/new{if $id}/{$id}{/if}"><i class="icon-plus"></i> New {$context|singularize|lower}</a>
+		</div>
+	{else}
+		<div class="info-header">
+			<h2>&nbsp;</h2>
+		</div>
+	{/if}
+	<div class="info-content">
+		<section>
+			<!-- @TODO -->
+		</section>
+	</div>
+{/if}

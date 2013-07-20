@@ -1,0 +1,49 @@
+{extend "admin"}
+
+{* Default order status "incomplete" on manual entry *}
+{$params.order.status = "incomplete"}
+
+{extend "default-entry" for="orders"}
+
+{$order = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>New order</h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="">
+		{render "messages"}
+		<div class="view-content">
+			<table class="table table-bordered">
+				<tr><td>Create new account below or <a href="/accounts">choose an existing account</a></td></tr>
+			</table>
+			<fieldset>
+				<div class="row">
+					<div class="field control-group span2">
+						<label>Name <span class="error">{$errors.account.name}</span></label>
+						<input type="text" name="order[account][name]" value="{$order.account.name}" />
+					</div>
+					<div class="field control-group span2">
+						<label>E-mail address <span class="error">{$errors.account.email}</span></label>
+						<input type="text" name="order[account][email]" value="{$order.account.email}" />
+					</div>
+					<div class="field control-group span2">
+						<label>Phone (optional) <span class="error">{$errors.account.phone}</span></label>
+						<input type="text" name="order[account][phone]" value="{$order.account.phone}" />
+					</div>
+				</div>
+			</fieldset>
+		</div>
+		<div class="view-footer">
+			<div class="actions">
+				<button type="submit" class="btn btn-primary">Create order</button>
+				<button type="button" class="btn view-cancel">Close</button>
+			</div>
+		</div>
+	</form>
+</div>
+

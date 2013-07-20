@@ -1,0 +1,36 @@
+{extend "admin"}
+
+{$query = [
+	search => $params.search,
+	where => $params.where,
+	page => $params.page
+]}
+
+{get $payments from "/payments" $query}
+{get $settings from "/settings/payments"}
+
+{foreach $payments as $payment}
+	<li>
+		<div class="headline">
+			<a class="list-item" href="/payments/entry/{$payment.id}" id="item_payments_{$payment.id}"> 
+				<span class="name">{$settings[$payment.method].name|default:$payment.method} <small>/ {$payment.action}</small></span>
+			</a>
+		</div>
+		<small>
+			Order #{$payment.order_id}
+			<span class="date">
+				{$payment.date_created|age_date}
+			</span>
+			<span class="labels">					
+				{if $payment.ref}
+					<span class="label label-info">Ref {$payment.ref}</span>
+				{/if}
+				<span class="label label-{if $payment.status|in:[sent,paid,success]}success{elseif $payment.status|in:[overdue,cancelled,error]}important{/if}">{$payment.status}</span>
+			</span>
+		</small>
+	</li>
+{foreachelse}
+	<li class="empty">No payments found</li>
+{/foreach}
+
+{render "loadmore" with=$payments query=$query url="/payments"}

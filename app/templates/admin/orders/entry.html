@@ -1,0 +1,585 @@
+{extend "admin"}
+
+{render "default-entry" for="orders"}
+{$order = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		{if $order.status == "ready"}{$class = "label-info"}{$since = $order.date_paid}{elseif $order.status == "shipped"}{$class = "label-success"}{$since = $order.date_shipped}{elseif $order.status == "cancelled"}{$class = "label-important"}{$since = $order.date_cancelled}{elseif $order.status == "returned"}{$class = "label-warning"}{$since = $order.date_returned}{/if}
+		<h2>Order #{$order.id} <small>/ {$order.name|escape}</small> <span class="label {$class}">{$order.status}</span></h2>
+		<div class="actions">
+			<a class="btn view-back" href="">Back</a>
+		</div>
+	</div>
+	<form class="view-body tabbable" method="post" action="">
+		{render "messages"}
+		<div class="view-content">
+			{capture name="notices"}
+				{if $order.status == "pending" && $order.date_scheduled}
+					Scheduled for {$order.date_scheduled|date_format} &mdash;
+				{/if}
+				{if $order.parent_id}
+					<a href="/orders/entry/{$order.parent_id}" class="view-link">Extended from #{$order.parent_id}</a>&nbsp;
+				{/if}
+				{if $order.prev_id}
+					&nbsp;<a href="/orders/entry/{$order.prev_id}" class="view-link">&laquo; Prev</a>&nbsp;
+				{/if}
+				{if $order.next_id}
+					{if !$order.parent_id}
+						<a href="/orders/entry/{$order.next_id}" class="view-link">Extended into #{$order.next_id}</a> 
+					{else}
+						<a href="/orders/entry/{$order.next_id}" class="view-link">Next &raquo;</a>
+					{/if}
+				{/if}
+			{/capture}
+			{if $smarty.capture.notices|trim}
+				<div class="alert alert-info">
+					{$smarty.capture.notices}
+				</div>
+			{/if}
+			{if $order.error}
+				<div class="alert alert-error">
+					{$order.error}
+				</div>
+			{/if}
+			<ul class="nav nav-pills">
+				<li class="{if !$params.tab}active{/if}"><a href="">Details</a></li>
+				<li class="{if $params.tab == "payment"}active{/if}"><a href="" data-pane="payment">Payment</a></li>
+				<li class="{if $params.tab == "shipment"}active{/if}"><a href="" data-pane="shipment">Shipment</a></li>
+			</ul>
+			<div class="tab-content">
+				<div class="tab-pane default {if !$params.tab}active{/if}">
+				
+					<table class="table table-bordered table-condensed">
+						<tr>
+							<th>Item</th>
+							<th class="qty">Qty</th>
+							<th class="total">Price</th>
+						</tr>
+						{foreach $order.items as $id => $item}
+							<tr class="{if $item.is_cancelled || $item.is_returned}strike{/if}">
+								<td>
+									<div class="with-actions">
+										<a class="view-link" href="/products/entry/{$item.id}">{$item.name}</a>
+										{if $item.variant}
+											<br /><em>{$item.variant.name}</em>
+										{/if}
+										<code class="act">
+											<a class="view-link" href="/orders/item/{$order.id}/items/{$id}">edit</a>
+										</code>
+									</div>
+								</td>
+								<td>{$item.quantity}</td>
+								<td>{($item.price*$item.quantity)|money} <small class="muted nowrap">{if $item.quantity > 1} {$item.price|money} each{/if}</small></td>
+							</tr>
+							{foreach $item.options as $option}
+								<tr class="option">
+									<td>&mdash; {$option.name|escape}</td>
+									<td>{$option.quantity|default:"&mdash;"}</td>
+									<td>{if $option.price}{($option.price*$option.quantity)|money} <small class="muted nowrap">{if $option.quantity > 1} {$option.price|money} each{/if}{else}&mdash;{/if}</small></td>
+								</tr>
+							{/foreach}
+						{foreachelse}
+							<tr><td colspan="3"><a href="/orders/item/{$order.id}/items" class="view-link">Add item &rarr;</a></td></tr>
+						{/foreach}
+						<tr>
+							<td>
+								<div class="with-actions">
+									Shipping{if $order.shipping.method}: {$order.shipping.method}{/if}
+									<code class="act">
+										<a class="view-link" href="/orders/{if $order.shipping}shipmethod{else}shipping{/if}/{$order.id}">{if $order.shipping.method}edit{else}enter shipping{/if}</a>
+									</code>
+								</div>
+							</td>
+							<td class="muted">&mdash;</td>
+							<td>{if $order.shipping.method}{$order.shipping_total|money}{else}&mdash;{/if}</td>
+						</tr>
+						<tr>
+							<td>
+								<div class="with-actions">
+									{$order.cart.taxes.sales.name|default:
+										$order.cart.taxes.vat.name|default:
+											"Taxes"}
+									<code class="act">
+										<a class="view-link" href="/orders/taxes/{$order.id}">edit</a>
+									</code>
+								</div>
+							</td>
+							<td class="muted">&mdash;</td>
+							<td>{if $order.cart.taxes|count || $order.tax_total > 0}{$order.tax_total|money}{else}&mdash;{/if}</td>
+						</tr>
+						<tr>
+							<td>
+								<div class="with-actions">
+									Discount {if $order.discounts.coupon}(<a href="/discounts/entry/{$order.discounts.coupon.id}" class="view-link">{$order.coupon_code}</a>){/if}
+									<code class="act">
+										<a class="view-link" href="/orders/coupon/{$order.id}">{if $order.discounts.coupon}edit{else}apply{/if}</a>
+									</code>
+								</div>
+							</td>
+							<td class="muted">&mdash;</td>
+							<td>{if $order.discount_total}{(-$order.discount_total)|money}{else}&mdash;{/if}</td>
+						</tr>
+						<tr>
+							<th>Total</td>
+							<th>{if $order.items}{$order.cart.quantity}{else}<span class="muted">&mdash;</span>{/if}</th>
+							<th>
+								{$order.grand_total|money}
+							</th>
+						</tr>
+						{if $order.payment_balance != 0}
+							{if $order.payment_balance > 0}
+								{$act = "refund"}
+								{$desc = "Refund due"}
+								{$class = "important"}
+							{else}
+								{$act = "charge"}
+								{$desc = "Payment due"}
+								{$class = "success"}
+							{/if}
+							<tr class="{$class}">
+								<td colspan="2">
+									<div class="with-actions">									
+										{$desc}
+										<code class="act">
+											{if $order.billing.method && $order.billing.method != "none"}
+												<a class="view-link" href="/orders/{$act}/{$order.id}/payments?payment[amount]={$order.payment_balance|abs}">{$act} balance</a>
+											{else}
+												<a class="view-link" href="/orders/billing/{$order.id}">enter billing</a>
+											{/if}
+										</code>
+									</div>
+								</td>
+								<td>{$order.payment_balance|abs|money}</td>
+							</tr>
+						{/if}
+					</table>
+					<button type="button" class="btn btn-primary view-link" data-href="/orders/item/{$order.id}/items"><i class="icon-plus-sign icon-white"></i> Add item</button>
+					<br />
+					<br />
+					
+					<table class="table table-bordered table-condensed with-actions">
+						<tr>
+							<th width="60">Account:</th>
+							<th>
+								<div class="with-actions">
+									<a class="view-link" href="/accounts/entry/{$order.account_id}">{$order.account.name|escape}</a>
+									&nbsp;
+									{foreach $order.account.roles as $role}
+										<span class="label">{$role}</span> &nbsp;
+									{/foreach}
+									<code class="act"><a class="view-link" href="/accounts/edit/{$order.account.id}">edit account</a></code>
+								</div>
+							</th>
+						</tr>
+						<tr>
+							<td>E-mail:</td>
+							<td>{$order.account.email|escape}</td>
+						</tr>
+						{if $order.account.phone}
+							<tr>
+								<td>Phone:</td>
+								<td>{$order.account.phone|escape}</td>
+							</tr>
+						{/if}
+					</table>
+					<table class="table table-bordered table-condensed with-actions">
+						<tr>
+							<th colspan="2">
+								<div class="with-actions">
+									Shipping
+									&nbsp;
+									{if $order.shipping.drop_ship}<span class="label label-info">Drop ship</span>{/if}
+									<code class="act"><a href="/orders/shipping/{$order.id}" class="view-link">{if $order.shipping}edit{else}enter{/if} shipping</a></code>
+								</div>
+							</th>
+						</tr>
+						{if $order.shipping}
+							{if $order.shipping.method}
+								<tr>
+									<td width="60">Method:</td>
+									<td>{$order.shipping.method} ({$order.shipping_total|money})</td>
+								</tr>
+							{/if}
+							<tr>
+								<td>Name:</td>
+								<td>{$order.shipping.name|default:$order.name|escape}</td>
+							</tr>
+							<tr>
+								<td>Address:</td>
+								<td>{$order.shipping.address|escape},
+									{if $order.shipping.city}{$order.shipping.city|escape},{/if}
+									{if $order.shipping.state}{$order.shipping.state|escape}{/if}
+									{$order.shipping.zip|escape}</td>
+							</tr>
+							{if $order.comments}
+								<tr>
+									<td>Comments:</td>
+									<td>{$order.comments|escape|nl2br}</td>
+								</tr>
+							{/if}
+						{else}
+							<tr>
+								<td>None entered</td>
+							</tr>
+						{/if}
+					</table>
+					<table class="table table-bordered table-condensed with-actions">
+						<tr>
+							<th colspan="2">
+								<div class="with-actions">
+									Billing <code class="act"><a href="/orders/billing/{$order.id}" class="view-link">{if $order.billing}edit{else}enter{/if} billing</a></code>
+								</div>
+							</th>
+						</tr>
+						{if $order.billing}
+							<tr>
+								<td width="60">Method:</td>
+								<td>
+									{if $order.billing.method == "card"}
+										Credit card
+										{if $order.billing.card}
+											{$card = $order.billing.card}
+											<span class="label label-success">
+												{$card.type|escape}
+												{$card.last4|escape}
+												(Expires: {$card.exp_month|escape}/{$card.exp_year|escape})
+											</span>
+										{else}
+											<span class="label">missing</span>
+										{/if}
+									{elseif $order.billing.method}
+										{$order.billing.method|capitalize}
+									{else}
+										None
+									{/if}
+								</td>
+							</tr>
+							{if $order.billing.name}
+								<tr>
+									<td>Name:</td>
+									<td>{$order.billing.name|escape}</td>
+								</tr>
+							{/if}
+							{if $order.billing.address}
+								<tr>
+									<td>Address:</td>
+									<td>{$order.billing.address|escape},
+										{if $order.billing.city}{$order.billing.city|escape},{/if}
+										{if $order.billing.state}{$order.billing.state|escape}{/if}
+										{$order.billing.zip|escape}</td>
+								</tr>
+							{/if}
+						{else}
+							<tr>
+								<td>None entered</td>
+							</tr>
+						{/if}
+					</table>
+					{if $order.schedule || $order.date_scheduled || $order.status == "incomplete"}
+						<table class="table table-bordered table-condensed with-actions">
+							<tr>
+								<th>
+									<div class="with-actions">
+										Schedule
+										&nbsp;
+										{if $order.schedule.every}<span class="label">Recurring</span>{/if}
+										{if $order.next_id == null}
+											<code class="act"><a href="/orders/schedule/{$order.id}" class="view-link">{if $order.schedule}edit{else}enter{/if} schedule</a></code>
+										{/if}
+									</div>
+								</th>
+							</tr>
+							{if $order.schedule.buffer}
+								{$buffer = "Processed "|cat:("{$order.schedule.buffer} days"|pluralize)|cat:" in advance"}
+							{/if}
+							{if $order.schedule.every}
+								<tr>
+									<td>
+										Occurs
+										{if $order.schedule.span > 1}
+											every {$order.schedule.span} {$order.schedule.every|lower}s
+										{else}
+											{$order.schedule.every|ucfirst}ly
+										{/if}
+										{if $order.schedule.day}
+											on day {$order.schedule.day}
+										{elseif $order.parent_id}
+											{$parent = "/orders/{$order.parent_id}"|get}
+											starting {$parent.date_created|date_format}
+										{else}
+											starting {$order.date_created|date_format}
+										{/if}
+									</td>
+								</tr>
+							{elseif $order.date_scheduled}
+								<tr>
+									<td>Occurs on {$order.date_scheduled|date_format}</td>
+								</tr>
+							{else}
+								<tr>
+									<td>None entered</td>
+								</tr>
+							{/if}
+							{if $buffer}
+								<tr>
+									<td>{$buffer}</td>
+								</tr>
+							{/if}
+						</table>
+					{/if}
+					
+					<div class="row">
+						<div class="field control-group span2">
+							<label><span class="label label-info">Private notes</span> <a class="edit_save" href="">edit</a></label>
+							<textarea class="disabled" disabled="disabled" name="order[notes]" rows="8">{$order.notes|escape}</textarea>
+						</div>
+		
+						<div class="field control-group span2">
+							<label><span class="label label-important">Public notes</span> <a class="edit_save" href="">edit</a></label>
+							<textarea class="disabled" disabled="disabled" name="order[public_notes]" rows="8">{$order.public_notes|escape}</textarea>
+						</div>
+					</div>
+					
+					<table class="table table-bordered table-condensed with-actions">
+						<tr>
+							<th colspan="2">
+								<div class="with-actions">
+									Events </code>
+								</div>
+							</th>
+						</tr>
+						<tr>
+							<td width="60"><span class="label">Created</span></td>
+							<td>{"Y-m-d @ H:i:s"|date:($order.date_created|strtotime)}</td>
+						</tr>
+						{if $order.date_scheduled}
+							<tr>
+								<td><span class="label label-info">Scheduled</span></td>
+								<td>{"Y-m-d @ H:i:s"|date:($order.date_scheduled|strtotime)}</td>
+							</tr>
+						{/if}
+						{if $order.date_cancelled}
+							<tr>
+								<td><span class="label label-important">Cancelled</span></td>
+								<td>{"Y-m-d @ H:i:s"|date:($order.date_cancelled|strtotime)}</td>
+							</tr>
+						{/if}
+						{if $order.date_shipped}
+							<tr>
+								<td><span class="label label-success">Shipped</span></td>
+								<td>{"Y-m-d @ H:i:s"|date:($order.date_shipped|strtotime)}</td>
+							</tr>
+						{/if}
+						{if $order.date_returned}
+							<tr>
+								<td><span class="label label-warning">Returned</span></td>
+								<td>{"Y-m-d @ H:i:s"|date:($order.date_returned|strtotime)}</td>
+							</tr>
+						{/if}
+					</table>
+					
+					{if $order.status != "incomplete"}
+						<button type="button" class="btn view-link confirm" data-href="/orders/entry/{$order.id}?order[:email]=true" data-post="true"><i class="icon-share-alt" style="position:relative;top:-1px"></i> Send email receipt</button>
+					{/if}
+					
+					<script type="text/javascript">
+						$('#view a.edit_save').click(function ()
+						{
+							$field = $(this).closest('.field').find('textarea');
+							if ($field.attr('disabled'))
+							{
+								$field.attr('disabled', false);
+								$(this).text('save');
+							}
+							else
+							{
+								$.post(window.view_pages[window.view_index].base, $(this).closest('form').serialize());
+								$field.attr('disabled', true);
+								$(this).text('edit');
+							}
+							return false;
+						});
+					</script>
+					
+				</div>
+				<div class="tab-pane payment {if $params.tab == "payment"}active{/if}">
+				
+					{if !$order.payments && !$order.billing}
+						<table class="table table-bordered">
+							<tr><td><a class="view-link" href="/orders/billing/{$order.id}">Enter billing</a> to process payments</td></tr>
+						</table>
+					{elseif $order.payments}
+						<table class="table table-bordered table-condensed">
+							<tr>
+								<th>Method</th>
+								<th>Amount</th>
+								<th>Date</th>
+							</tr>
+							{foreach $order.payments as $payment}
+								<tr>
+									{if $payment.method == "card"}
+										<td>
+											<div class="with-actions">
+												<span class="label label-{if $payment.action == "charge"}success{else}{/if}" title="{$payment.reason|htmlspecialchars}">{$payment.action}</span>
+												{$card = $payment.card|default:$payment.billing.card}
+												{if $card}
+													{$card.type} {$card.last4}
+												{else}
+													Credit card
+												{/if}
+												{if $payment.action == "charge"}
+													<code class="act">
+														{if $payment.amount_refundable > 0}
+															<a class="view-link" href="/orders/refund/{$order.id}/payments?payment[charge_id]={$payment.charge_id}&payment[amount]={$payment.amount-$payment.amount_refunded}&payment[method]={$payment.method}">refund{if $payment.amount != $payment.amount_refundable} {$payment.amount_refundable|money}{/if}</a>
+														{elseif $payment.amount_refunded}
+															refunded
+														{/if}
+													</code>
+												{/if}
+											</div>
+										</td>
+									{elseif $payment.method == "credit"}
+										<td>
+											<div class="with-actions">
+												<span class="label label-{if $payment.action == "charge"}success{else}{/if}" title="{$payment.reason|htmlspecialchars}">{$payment.action}</span>
+												Account
+												{if $payment.action == "charge"}
+													<code class="act">
+														<a class="view-link" href="/orders/credit/{$order.id}/payments?payment[amount]={$payment.amount}">credit</a>
+													</code>
+												{/if}
+											</div>
+										</td>
+									{elseif $payment.method == "invoice"}
+										<td>
+											<div class="with-actions">
+												<span class="label label-{if $payment.status|in:[sent,paid]}success{elseif $payment.status|in:[overdue,cancelled]}important{/if}" title="{if $payment.ref}Reference: {$payment.ref}{/if}">{$payment.status}</span>
+												Invoice
+												<code class="act">
+													<a class="view-link" href="/orders/invoice/{$order.id}/payments/{$payment.id}">view</a>
+												</code>
+											</div>
+										</td>
+									{else}
+										<td>
+											<div class="with-actions">
+												<span class="label label-{if $payment.action == "charge"}success{else}{/if}" title="{$payment.reason|htmlspecialchars}">{$payment.action}</span>
+												{$payment.method|ucfirst}
+												{if $payment.action == "charge"}
+													<code class="act">
+														<a class="view-link" href="/orders/refund/{$order.id}/payments?payment[amount]={$payment.amount}&payment[method]={$payment.method}">refund</a>
+													</code>
+												{/if}
+											</div>
+										</td>
+									{/if}
+									<td>
+										{$payment.amount|money}
+									</td>
+									<td>{$payment.date_created|age_date}</td>
+								</tr>
+							{/foreach}
+							<tr>
+								<th>Total</th>
+								<th colspan="3">
+									{$order.payment_total|money}
+								</th>
+							</tr>
+						</table>
+					{else}
+						<table class="table table-bordered">
+							<tr><td>{if $order.payment_balance < 0}{if $order.auto_payment}Auto payment pending...{else}{$order.payment_balance|abs|money} due. <a class="view-link" href="/orders/charge/{$order.id}/payments?payment[amount]={$order.payment_balance|abs}">Charge balance &rarr;</a>{/if}{else}No payments{/if}</td></tr>
+						</table>
+					{/if}
+				</div>
+				<div class="tab-pane shipment {if $params.tab == "shipment"}active{/if}">
+				
+					{if !$order.shipping && !$order.shipments}
+						<table class="table table-bordered">
+							<tr><td><a href="/order/shipping/{$order.id}" class="view-link">Complete order</a> to process shipments</td></tr>
+						</table>
+					{elseif $order.shipments}
+						<table class="table table-bordered table-condensed">
+							<tr>
+								<th>Method</th>
+								<th>Tracking</th>
+								<th>Date</th>
+							</tr>
+							{foreach $order.shipments as $shipment}
+								<tr class="{if $shipment.is_cancelled}strike{/if}">
+									<td>
+										<div class="with-actions">
+											{$shipment.method}
+											({$shipment.items|count})
+											<code class="act">
+												<a class="view-link" href="/orders/shipment/{$order.id}/shipments/{$shipment.id}">edit</a>
+											</code>
+										</div>
+									</td>
+									<td>{$shipment.tracking}</td>
+									<td>{$shipment.date_created|age_date}</td>
+								</tr>
+							{/foreach}
+						</table>
+					{else}
+						<table class="table table-bordered">
+							<tr><td>No shipments</td></tr>
+						</table>
+					{/if}
+					
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<span class="tab-controls default">
+				{if $order.status != "cancelled" && $order.status != "returned"}
+				
+					{if $order.items}
+						{if !$order.shipping}
+							<button type="button" class="btn btn-primary view-link" data-href="/orders/shipping/{$order.id}">Enter shipping</button>
+						{elseif !$order.shipping.method}
+							<button type="button" class="btn btn-primary view-link" data-href="/orders/shipmethod/{$order.id}">Choose shipping method</button>
+						{elseif (!$order.billing && $order.billing_total > 0)}
+							<button type="button" class="btn btn-primary view-link" data-href="/orders/billing/{$order.id}">Enter billing</button>
+						{elseif $order.status == "incomplete"}
+							<button type="button" class="btn btn-primary view-link" data-href="/orders/entry/{$order.id}?order[status]=pending&order[:email]=true{if $order.billing.method == "card"}&order[auto_payment]=true{/if}" data-post="true">Complete order</button>
+						{/if}
+					{/if}
+					
+					{if $order.status != "hold"}
+						<button type="button" class="btn view-link" data-href="/orders/entry/{$order.id}?order[status]=hold" data-post="true">Hold order</button>
+					{else}
+						<button type="button" class="btn btn-info view-link" data-href="/orders/entry/{$order.id}?order[status]=pending&order[error]=" data-post="true">Remove hold</button>
+					{/if}
+
+					{if !$order.shipments}
+						<button type="button" class="btn view-link" data-href="/orders/entry/{$order.id}?order[:cancel]=true" data-post="true">Cancel order</button>
+					{/if}
+				{/if}
+			</span>
+			<span class="tab-controls payment">
+				{if $order.billing}
+					{$payment_settings = get("/settings/payments")}
+					{if $order.account.has_role.retailer && $payment_settings.invoice.enabled}
+						<button type="button" class="btn btn-primary invoice view-link" data-href="/orders/invoice/{$order.id}/payments"><i class="icon-list-alt icon-white"></i> Invoice</button>
+					{/if}
+					<button type="button" class="btn btn-success view-link" data-href="/orders/charge/{$order.id}/payments"><i class="icon-plus-sign icon-white"></i> Charge</button>
+				{/if}
+				<button type="button" class="btn view-link" data-href="/orders/credit/{$order.id}/payments">Credit</button>
+			</span>
+			<span class="tab-controls shipment">
+				{if $order.shipping}
+					<button type="button" class="btn btn-primary view-link" data-href="/orders/shipment/{$order.id}/shipments"><i class="icon-plus-sign icon-white"></i> New shipment</button>
+				{/if}
+			</span>
+			<button type="button" class="btn view-cancel">Close</button>
+			{if !$order.is_deleted}
+				<a class="trash view-link" href="/orders/entry/{$order.id}?order[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+			{else}
+				<a class="trash view-link undo" href="/orders/entry/{$order.id}?order[:restore]=true" data-post="true">Undo <i class="icon-trash"></i></a>
+			{/if}
+		</div>
+	</form>
+</div>

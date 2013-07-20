@@ -1,0 +1,120 @@
+{$id = $field.id}
+{$field_size = ($field.size > 0 && $field.size < 4) ? $field.size : 4}
+
+<div class="field control-group span{$field_size}" data-id="{$id}">
+	<label>{$field.name} <span class="error">{$error}</span></label>
+	
+	{if $field.type == "text"}
+	
+		{* Text field *}
+		<input type="text" name="entry[{$id}]" value="{$entry[$id]|htmlspecialchars}" placeholder="{$field.placeholder}" {if $disabled}disabled="disabled"{/if} />
+		
+	{elseif $field.type == "textarea"}
+	
+		{* Textarea field *}
+		{if !$field.static || $editable}
+			<textarea name="entry[{$id}]" placeholder="{$field.placeholder}" {if $disabled}disabled="disabled"{/if}>{$entry[$id]|htmlspecialchars}</textarea>
+		{else}
+			<div class="static-text">
+				<p>{$entry[$id]|nl2br}</p>
+			</div>
+		{/if}
+		
+	{elseif $field.type == "html"}
+	
+		{* HTML/Markdown field *}
+		{if !$field.static || $editable}
+			<textarea name="entry[{$id}]" placeholder="{$field.placeholder}" {if $disabled}disabled="disabled"{/if}>{$entry[$id]|htmlspecialchars}</textarea>
+		{else}
+			<div class="static-text">
+				{$entry[$id]|markdown}
+			</div>
+		{/if}
+		
+	{elseif $field.type == "number"}
+	
+		{* Number field *}
+		<input type="text" name="entry[{$id}]" value="{$entry[$id]|htmlspecialchars}" placeholder="{$field.placeholder}" class="numeric" {if $disabled}disabled="disabled"{/if} />
+		
+	{elseif $field.type == "select"}
+	
+		{* Select field *}
+		{if $field.multi}
+		
+			{* Multi/checkboxes *}
+			<div class="multi">
+				<input type="hidden" name="entry[{$id}]" value="" />
+				{foreach $field.values as $value => $label}
+					<label class="checkbox">
+						<input type="checkbox" name="entry[{$id}][]" value="{$value}" {if (is_array($entry[$id]) && in_array($value, $entry[$id])) || $value == $entry[$id]}{$checked[$id] = true}checked="checked"{/if} {if $disabled}disabled="disabled"{/if} />
+						{$label}
+					</label>
+				{/foreach}
+				{if !$checked[$id] && $entry[$id]}
+					{foreach $entry[$id] as $value}
+						<label class="checkbox">
+							<input type="checkbox" name="entry[{$id}][]" value="{$entry[$id]}" checked="checked" {if $disabled}disabled="disabled"{/if} />
+							{$entry[$id]}
+						</label>
+					{/foreach}
+				{/if}
+			</div>
+		{else}
+		
+			{* Dropdown menu *}
+			<select name="entry[{$id}]" {if $disabled}disabled="disabled"{/if}>
+				{if !$entry[$id]}
+					{$entry[$id] = $field.default}
+				{/if}
+				<option value=""></option>
+				{foreach $field.values as $value => $label}
+					<option value="{$value}" {if $entry[$id] == $value}{$selected[$id] = true}selected="selected"{/if}>{$label}</option>
+				{/foreach}
+				{if !$selected[$id] && $entry[$id] && !is_array($entry[$id])}
+					<option value="{$entry[$id]}" selected="selected">{$entry[$id]}</option>
+				{/if}
+			</select>
+		{/if}
+		
+	{elseif $field.type == "channel"}
+	
+		{* Get select values from channel/entries *}
+		{get $channel_entries from "/entries?{$field.channel_params}" [
+			channel_id => $field.channel_id,
+			limit => null
+		]}
+		
+		{* Build select values *}
+		{$channel_values = []}
+		{foreach $channel_entries as $ch_entry}
+			{$label = $ch_entry.name|default:$ch_entry.title}
+			{$channel_values[$ch_entry.id] = $label}
+		{/foreach}
+	
+		{* Render as select field *}
+		{$channel_field = [
+			id => $field.id,
+			type => "select",
+			multi => $field.multi,
+			values => $channel_values
+		]}
+		<div class="row">
+			{render "entries/field" field=$channel_field entry=$entry error=$error}
+		</div>
+	
+	{elseif $field.type == "image"}
+		
+		{* Image field *}
+		{if $entry.id}
+			<div class="image default" data-upload="/upload/entries/{$entry.id}">
+				<img src="{image type=entries id=$entry.id name=$field.id width=190 height=150 padded=true default='/images/blank.png'}?{time()}" />
+				<span><em class="name"></em></span>
+				<input type="file" class="upload" name="{$id}" {if $disabled}disabled="disabled"{/if} />
+				<input type="hidden" class="uploaded" name="entry[images][{$id}]" value="" />
+			</div>
+		{else}
+			<input type="text" placeholder="Create entry to upload..." disabled="disabled" />
+		{/if}
+
+	{/if}
+</div>

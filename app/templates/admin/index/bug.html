@@ -1,0 +1,104 @@
+{extend "admin"}
+
+{args $id}
+
+{if $params.bug}
+
+	{* Get or put bugs channel *}
+	{$bugs = get("/channels/bugs", [':put' => [
+		name => "Bug reports",
+		fields => [
+			1 => [
+				id => "title",
+				name => "Title",
+				type => "text",
+				required => true
+			],
+			2 => [
+				id => "description",
+				name => "Bug description",
+				type => "textarea"
+			],
+			3 => [
+				id => "notes",
+				name => "Notes",
+				type => "textarea",
+				placeholder => "Is it fixed yet?"
+			],
+			4 => [
+				id => "severity",
+				name => "Severity",
+				type => "select",
+				values => [
+					"info" => "Low",
+					"warning" => "Important",
+					"important" => "Critical"
+				],
+				default => "info"
+			],
+			5 => [
+				id => "status",
+				name => "Status",
+				type => "select",
+				values => [
+					"new" => "New",
+					"reviewed" => "Reviewed",
+					"fixed" => "Fixed"
+				],
+				default => "new"
+			]
+		]
+	]])}
+	
+	{* Validate *}
+	{$params.bug[':validate'] = [
+		required => [
+			description
+		]
+	]}
+	
+	{* Post bug entry *}
+	{$params.bug.title = $params.bug.description|strip|trim|truncate:40}
+	{$params.bug.status = "new"}
+	{$result = post("/channels/bugs/entries", $params.bug)}
+	
+	{if $result.id}
+		{redirect "/bug/{$result.id}"}
+	{else}
+		{$errors = $result.errors}
+	{/if}
+{/if}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Report a bug<small>, I appreciate it!</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="">
+		{render "messages"}
+		{if $id}
+			<div class="view-content">
+				<h4>Thanks!</h4>
+			</div>
+			<div class="view-footer actions">
+				<button type="button" class="btn view-cancel">Close</button>
+			</div>
+		{else}
+			<div class="view-content">
+				<div class="row">
+					<div class="field control-group span4">
+						<label>Describe the bug <span class="error">{$errors.description}</span></label>
+						<textarea name="bug[description]" rows="5">{$params.bug.description|htmlspecialchars}</textarea>
+					</div>
+				</div>
+			</div>
+			<div class="view-footer actions">
+				<button type="submit" class="btn btn-primary">Submit</button>
+				<button type="button" class="btn view-cancel">Cancel</button>
+			</div>
+		{/if}
+	</form>
+</div>
+

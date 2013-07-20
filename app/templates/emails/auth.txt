@@ -1,0 +1,7 @@
+{$request.to = $account.email}
+{$request.from = "admin@{$request.host}"}
+{$request.subject = "Login to e-commerce admin"}
+
+You will create a password upon login:
+
+http{($request.https)?'s':''}://{$request.host}/authenticate/{$account.auth_token}

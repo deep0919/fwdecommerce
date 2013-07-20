@@ -1,0 +1,52 @@
+{extend "admin"}
+
+{$query = [
+	search => $params.search,
+	where => $params.where,
+	page => $params.page
+]}
+
+{get $products from "/products" $query}
+
+{foreach $products as $product}
+	<li>
+		<span class="image">
+			<img src="{image for=$product width=50 height=50 default='/images/blank.png'}" />
+			<span class="shadow"></span>
+		</span>
+		<div class="headline">
+			<a class="list-item" href="/products/entry/{$product.id}" id="item_products_{$product.id}"> 
+				<span class="name">
+					{$product.name}
+					{if $product.is_bundle}
+						<small>/ {pluralize "{$product.items|count} items"}</small>
+					{elseif $product.sku}
+						<small>/ {$product.sku|upper}</small>
+					{/if}
+				</span>
+			</a>
+		</div>
+		<small>
+			{$product.price|money}
+			{if $product.cost}
+				&nbsp;/&nbsp; {$product.cost|money}
+			{/if}
+			<span class="date">
+				{$product.date_created|age_date}
+			</span>
+			<span class="label label-{if $product.is_active === true}success{elseif $product.is_active !== false}warning{/if}">
+				{if $product.is_active === true}
+					Active
+				{elseif !$product.is_active}
+					Not Active
+				{else}
+					{$product.is_active}
+				{/if}
+			</span>
+		</small>
+	</li>
+{foreachelse}
+	<li class="empty">No products found</li>
+{/foreach}
+
+{render "loadmore" with=$products query=$query url="/products"}

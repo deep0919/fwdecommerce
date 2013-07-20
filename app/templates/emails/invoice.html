@@ -1,0 +1,77 @@
+{$order = $payment.order}
+<html>
+<body>
+<p>
+<strong>Invoice #{$order.id}</strong> 
+&mdash; {$order.date_created|date_format}
+</p>
+
+<ul>
+{foreach $order.items as $item}
+	<li>
+		{$item.quantity} x {$item.name} @ {$item.price|money} = {($item.price*$item.quantity)|money}
+		{if $item.items}
+			<ul>
+				{foreach $item.items as $i}
+		    		<li>{$i.quantity} x {$i.name}</li>
+		    	{/foreach}
+			</ul>
+		{/if}
+	</li>
+{/foreach}
+</ul>
+
+<p>
+Sub total: {$order.sub_total|money}<br />
+{if $order.discount_total}
+	Discount: ({$order.discount_total|money})
+	{if $order.coupon_id}
+		[{$order.coupon_code}]
+	{/if}
+	<br />
+{/if}
+{if $order.credit_total}
+	Credit: ({$order.credit_total|money})<br />
+{/if}
+{if $order.tax_total}
+	Sales tax: {$order.tax_total|money}<br />
+{/if}
+{$order.shipping.method}: {$order.shipping_total|money}<br/ >
+Total: {$order.grand_total|money}<br />
+{if $order.credit_total}
+	<strong>Credit: {$order.credit_total|money}</strong><br/ >
+	<strong>Payment amount: {($order.grand_total-$order.credit_total)|money}</strong><br />
+{/if}
+</p>
+
+<p>
+<strong>Amount owed: {$payment.amount|money}</strong>
+</p>
+
+<p>
+<strong>Payment terms:</strong><br />
+{if $payment.date_due}
+	Balance due by {$payment.date_due|date_format} (Net {(($payment.date_due|strtotime - $payment.date_created|strtotime)/60/60/24)|ceil})
+{else}
+	Balance due upon receipt
+{/if}
+</p>
+
+<p>
+<strong>Ship to:</strong><br />
+{$order.shipping.address}<br />
+{$order.shipping.city}, {$order.shipping.state} {$order.shipping.zip}<br />
+<br />
+<strong>Bill to:</strong><br />
+Name: {$order.account.name}<br />
+E-mail: {$order.account.email}<br />
+{if $order.account.phone}
+	Phone: {$order.account.phone}<br />
+{/if}
+<br />
+{$order.billing.address}<br />
+{$order.billing.city}, {$order.billing.state} {$order.billing.zip}<br />
+<br />
+</p>
+</body>
+</html>

@@ -1,0 +1,4 @@
+*
+!.gitignore
+!app.yml
+!local.yml

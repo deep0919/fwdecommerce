@@ -1,0 +1,29 @@
+{$url = $url|default:"{$request.uri}"}
+
+{if $with.current < $with.pages|count}
+	<li class="loadmore">
+		{$query.page = $with.current+1}
+		<div class="loadmore">
+			<a href="{$url}/results?{$query|http_build_query}">{if $title}{$title}{else}Load More{if $label} {pluralize word=$label|ucfirst if_many=$with.count}{/if}{/if}</a>
+		</div>
+	
+		<script type="text/javascript">
+		
+			// Load more.
+			$loadmore = $('li.loadmore').click(function ()
+			{
+				var url = $(this).find('a').attr('href');
+				var orig_url = $('#list').data('url');
+				
+				$('.list-results').opacity(0.6);
+				$('#list').trigger('load', [url, null, "append"]);
+				$(this).closest('li').remove();
+				
+				$('#list').data('url', orig_url);
+				
+				return false;
+			});
+		
+		</script>
+	</li>
+{/if}

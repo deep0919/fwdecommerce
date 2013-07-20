@@ -1,0 +1,34 @@
+<html>
+<body>
+<p>
+<strong>Order #{$shipment.order.id}</strong> 
+&mdash; Shipped {$shipment.date_created|date_format}
+</p>
+
+<p>
+{$shipment.method} {$shipment.tracking}
+</p>
+
+<p>
+<strong>Tracking link:</strong><br />
+{$shipment.tracking_info.url}
+</p>
+<p>
+<strong>Items in shipment:</strong><br />
+{foreach $shipment.items as $id => $item}
+	{$item.quantity} x {$item.name}<br />
+{/foreach}
+</p>
+
+<p>
+<strong>Shipping to:</strong><br />
+{$shipment.name}<br />
+{$shipment.address}<br />
+{if $shipment.city}{$shipment.city},{/if}
+{if $shipment.state}{$shipment.state}{/if}
+{if $shipment.zip}{$shipment.zip}{/if}
+{if $shipment.country}{$shipment.country}{/if}<br />
+<br />
+</p>
+</body>
+</html>

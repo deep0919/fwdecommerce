@@ -1,0 +1,292 @@
+{extend "session"}
+
+{args $step}
+
+{* Cart required *}
+{if !$request.cart}{redirect "/cart"}{/if}
+
+{* Order required beyond step 1 *}
+{if !$request.cart.order && $step}{redirect "/checkout"}{/if}
+
+{* Signal minimal layout style *}
+{$request.layout_for_checkout = true}
+
+<div class="checkout-page">
+
+	{* Display the current checkout step (from page argument $step).
+		This is a good place to customize the checkout process *}
+	<div class="row">
+	
+		{if !$step}
+		
+			<h1 class="span12">Checkout <small>Step 1 of 2</small></h1>
+		
+			{* Shipping, discount... *}
+			<form class="checkout span4" method="post" action="/checkout/billing">
+				{render "checkout/shipping"}
+				<div class="form-actions">
+					<button type="submit" class="btn btn-large btn-cta">Continue</button>
+				</div>
+			</form>
+			
+		{elseif $step == billing}
+		
+			<h1 class="span12">Checkout <small>Step 2 of 2</small></h1>
+		
+			{* Billing, finalize... *}
+			<form class="checkout span4" method="post" action="/checkout/receipt" data-last-post="true">
+				{render "checkout/billing"}
+				<div class="form-actions">
+					<button type="submit" class="btn btn-large btn-cta">Complete Order</button>
+				</div>
+			</form>
+		{/if}
+		
+		{* Checkout cart items *}
+		<div class="span7 offset1">
+			<table class="table checkout-table" cellspacing="0">
+				<tr>
+					<th colspan="3">Items</th>
+				</tr>
+				<tbody>
+				{foreach $request.cart.items as $item}
+					<tr>
+						<td class="checkout-table-image">
+							<img src="{image type=products id=$item.id width=40 height=40}" />
+						</td>
+						<td class="checkout-table-item">
+							<h4 class="name">
+								{$item.quantity}&times; {$item.name}
+							</h4>
+							{if $item.variant}
+								<small class="variant">{$item.variant.name}</small>
+							{/if}
+							{if $item.options}
+								<ul class="options">
+									{foreach $item.options as $key => $option}
+										<li>
+											{$option.name}
+										</li>
+									{/foreach}
+								</ul>
+							{/if}
+						</td>
+						<td class="checkout-table-total">
+							{if $item.price > 0}
+								{($item.price*$item.quantity)|money}
+							{else}
+								&mdash;
+							{/if}
+						</td>
+					</tr>
+				{/foreach}
+				
+				{* Alias cart order *}
+				{$order = $request.cart.order}
+				
+				{* Shipping method/total? *}
+				{if $order.shipping.method && $step}
+					<tr class="checkout-table-subitem">
+						<td class="checkout-table-item" colspan="2">
+							Shipping: {$order.shipping.method|escape}
+						</td>
+						<td class="checkout-table-total">
+							{$request.cart.shipping_total|money}
+						</td>
+					</tr>
+				{/if}
+				
+				{* Show sales tax? *}
+				{if $request.cart.tax_total && $step}
+					<tr class="checkout-table-subitem">
+						<td class="checkout-table-item" colspan="2">
+							{$request.cart.taxes.sales.name|default:
+								$request.cart.taxes.vat.name|default:"Taxes"}
+						</td>
+						<td class="checkout-table-total">
+							{$request.cart.tax_total|money}
+						</td>
+					</tr>
+				{/if}
+				{* Discount code? *}
+				{if $request.cart.discounts.coupon}
+					<tr class="checkout-table-subitem">
+						<td class="checkout-table-item" colspan="2">
+							<a class="coupon" href="" title="{$request.cart.discounts.coupon.description|htmlspecialchars}">
+								Discount {if $request.cart.coupon_code}({$request.cart.coupon_code}){/if}</a>
+						</td>
+						<td class="checkout-table-total">
+							{if $request.cart.discount_total > 0}
+								{(-$request.cart.discount_total)|money}
+							{else}
+								&mdash;
+							{/if}
+						</td>
+					</tr>
+				{/if}
+				{* Sub or grand total? *}
+				{if !$step}
+					<tr class="checkout-table-subitem">
+						<td class="checkout-table-item" colspan="2">
+							<strong>Sub Total</strong>
+						</td>
+						<td class="checkout-table-total">
+							<strong>{($request.cart.sub_total-$request.cart.sub_discount)|money}</strong>
+						</td>
+					</tr>
+				{else}
+					<tr class="checkout-table-subitem">
+						<td class="checkout-table-item" colspan="2">
+							<strong>Total</strong>
+						</td>
+						<td class="checkout-table-total">
+							<strong>{$request.cart.grand_total|money}</strong>
+						</td>
+					</tr>
+				{/if}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+<!-- Checkout form behavior -->
+<script type="text/javascript">
+
+	// Delegate form submit so that it gets executed last.
+	$(document).delegate('form.checkout', 'submit', function (event)
+	{
+		$form = $(this);
+		
+		// Form locked?
+		if ($form.data('locked'))
+		{
+			return false;
+		}
+		
+		// Trigger loading anim.
+		$form.trigger('loading');
+		
+		// Clear all previous errors.
+		$form.find('input,select,textarea').trigger('error_clear');
+		
+		// Serialize form data.
+		var form_data = $form.serialize();
+		
+		// Append order data?
+		if ($form.data('order'))
+		{
+			// Should already be serialized.
+			form_data += '&'+$form.data('order');
+		}
+				
+		// Submit data by ajax through checkout/index.json.
+		var request = $.ajax("/checkout/index.json", {
+			type: 'POST',
+			data: form_data,
+			dataType: 'json',
+			cache: false
+		});
+
+		// Request done?
+		request.done(function (response)
+		{
+			// Validation errors?
+			if (response.errors)
+			{
+				for (var section in { order: response.errors.order, account: response.errors.account })
+				{
+					var errors = response.errors[section];
+					
+					for (var field in errors)
+					{
+						// Trigger field errors.
+						if (typeof errors[field] == "string")
+						{
+							$form.find('.form-field .'+field).trigger('error', [errors[field]]);
+						}
+						else
+						{
+							for (var key in errors[field])
+							{
+								$form.find('.form-field .'+key).trigger('error', [errors[field][key]]);
+							}
+						}
+					}
+				}
+				
+				$form.trigger('loading_done');
+			}
+			else
+			{
+				// Proceed to next step.
+				if ($form.data('last-post'))
+				{
+					// Post to last checkout step action.(form action) with POST.
+					$('<form method="post" class="hidden" action="'+$form.attr('action')+'"></form>')
+						.appendTo('body')
+						.submit();
+				}
+				else
+				{
+					// Simply navigate to next step.
+					window.location.href = $form.attr('action');
+				}
+			}
+		});
+		
+		// Request fail?
+		request.fail(function (xhr, status)
+		{
+			$form.trigger('loading_done');
+			
+			// This should not happen.
+			alert('An unknown request error occurred, please try again');
+		});
+		
+		// Prevent default (submit).
+		return false;
+	});
+	
+	// Form loading animation.
+	$('form.checkout').live('loading', function ()
+	{
+		$(this).data('locked', true)
+			.css({ opacity: 0.5 });
+	});
+	$('form.checkout').live('loading_done', function ()
+	{	
+		$(this).data('locked', false)
+			.css({ opacity: '' });
+			
+		// Checkout has errors?
+		$error_field = $(this).find('.form-field.error:first');
+		
+		if ($error_field.length > 0)
+		{
+			$error_field.find('input,select,textarea').focus();
+		}
+	});
+	
+	// Checkout field error.
+	$('input,select,textarea').live('error', function (event, error_message)
+	{
+		$(this).closest('.form-field').addClass('error');
+		
+		if (error_message && error_message != "required")
+		{
+			$label = $(this).closest('.form-field').find('label');
+			$label.find('span.error').remove();
+			$label.append(' <span class="error">'+error_message+'</span>');
+		}
+	});
+	
+	// Clear field error.
+	$('input,select,textarea').live('error_clear', function ()
+	{
+		$(this).closest('.form-field')
+			.removeClass('error')
+			.find('label .error').remove();
+	});
+
+</script>

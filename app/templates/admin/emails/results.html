@@ -1,0 +1,38 @@
+{extend "admin"}
+
+{$query = [
+	search => $params.search,
+	where => $params.where,
+	page => $params.page
+]}
+
+{get $emails from "/emails" $query}
+
+{foreach $emails as $email}
+	<li>
+		<div class="headline">
+			<a class="list-item" href="/emails/entry/{$email.id}" id="item_emails_{$email.id}"> 
+				<span class="name">
+					{$email.subject|escape|default:"(no subject)"}
+					<small>/ {$email.to|escape}</small>
+				</span>
+			</a>
+		</div>
+		<small>
+			From: {$email.from|escape}
+			{if $email.cc|escape}
+				<b class="bull">&bull;</b> {$email.cc|escape}
+			{/if}
+			<span class="date">
+				{$email.date_created|age_date}
+			</span>
+			{if $email.type}
+				<span class="label label-info">{$email.type}</span>
+			{/if}
+		</small>
+	</li>
+{foreachelse}
+	<li class="empty">No emails found</li>
+{/foreach}
+
+{render "loadmore" with=$emails query=$query url="/emails"}

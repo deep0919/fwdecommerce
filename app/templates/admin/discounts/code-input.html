@@ -1,0 +1,2 @@
+{$codes = (!$codes|is_array) ? explode("\n", $codes) : $codes}
+<textarea rows="{$codes|count+1}" name="{$name}">{foreach $codes as $code}{$code}{if !$code@last}{"\n"}{/if}{/foreach}</textarea>

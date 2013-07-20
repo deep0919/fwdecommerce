@@ -1,0 +1,178 @@
+{extend "admin"}
+
+{extend "default-entry" for="orders"}
+		
+{$order = $request.entry}
+{$errors = $request.errors}
+
+{args $order_id}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>
+			Discounts <small>/ Order #{$order.id}</small>
+		</h2>
+		<div class="actions">
+			<a class="btn view-back" href="">Back</a>
+		</div>
+	</div>
+	<form class="view-body tabbable" method="post" action="/orders/discounts/{$order.id}">
+		{render "messages"}
+		<div class="view-content">
+			<div class="tab-content">
+				<table class="table table-bordered table-condensed">
+					<tr>
+						<th colspan="3" class="field control-group">
+							<span class="error hidden">{$errors.coupon_code}</span>
+							<input type="text" name="order[coupon_code]" value="{$params.order.coupon_code|default:$order.coupon_code}" placeholder="Coupon code" />
+						</th>
+					</tr>
+				</table>
+				{if $errors}
+					{$order = "/orders/{$order_id}"|get}
+				{/if}
+				{if $order.discounts}
+					{foreach $order.discounts|orderby:"code" as $id => $discount}
+						{$discounts_in_order[$id] = true}
+						<table class="table table-bordered table-condensed with-actions">
+							<tr class="{$id}">
+								<th colspan="2">
+									<div class="with-actions">
+										{if $id == "coupon"}
+											<span class="label label-success">Coupon</span>&nbsp;
+										{/if}
+										{$discount.name}
+										<code class="act">
+											<a class="confirm view-link" href="/orders/discounts/{$order.id}?redirect=/orders/discounts/{$order.id}&order[discounts][{$id}]=" data-post="true">remove</a>
+										</code>
+									</div>
+								</th>
+							</tr>
+							{foreach $discount.rules as $rule_id => $rule}
+								<tr>
+									<!--<td class="checkbox">
+										<input type="hidden" name="order[discounts][{$id}][rules][{$rule_id}][enabled]" value="0" disabled="disabled" />
+										<input type="checkbox" id="discount{$id}" name="order[discounts][{$id}][rules][{$rule_id}][enabled]" value="true" {if $rule.enabled === null || $rule.enabled}checked="checked"{/if} class="discount{$id}" data-discount="{$id}" />
+									</td>-->
+									<td>
+										<label for="discount{$id}">
+											<span class="label">{$rule.type|default:"sub-total"}</span>&nbsp;
+											{$rule.value} off
+										</label>
+									</td>
+									<td>
+										<label>
+											{render "discounts/ruledesc" rule=$rule}
+										</label>
+									</td>
+								</tr>
+							{/foreach}
+						</table>
+					{/foreach}
+				{/if}
+				{foreach $order.account.discounts as $id => $discount}
+					{if !$discounts_in_order[$id]}
+						{$applicable_discounts[$id] = $discount}
+					{/if}
+				{/foreach}
+				{if $applicable_discounts|count}
+					<h4><span class="label label-success">Applicable discounts</span></h4>
+					{foreach $applicable_discounts as $id => $discount}
+						<table class="table table-bordered table-condensed with-actions">
+							<tr>
+								<th colspan="2">
+									<div class="with-actions">
+										{$discount.name}
+										<code class="act">
+											<a class="view-link" href="/orders/discounts/{$discount.id}?redirect=/orders/discounts/{$order.id}&order[discounts][{$id}]=" data-post="true">apply</a>
+											<!--<a class="view-link" href="/discounts/entry/{$discount.id}">edit</a>-->
+										</code>
+									</div>
+								</th>
+							</tr>
+							{foreach $discount.rules as $rule_id => $rule}
+								<tr>
+									<!--<td class="checkbox">
+										<input type="checkbox" id="discount{$id}" name="order[discounts][{$id}][rules][{$rule_id}][enabled]" value="true" class="discount{$id}" data-discount="{$id}" />
+									</td>-->
+									<td>
+										<label for="discount{$id}">
+											<span class="label">{$rule.type|default:"sub-total"}</span>&nbsp;
+											{$rule.value} off
+										</label>
+									</td>
+									<td>
+										{render "discounts/ruledesc" rule=$rule}
+									</td>
+								</tr>
+							{/foreach}
+						</table>
+					{/foreach}
+				{/if}
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<span class="tab-controls default">
+				{if $order.discounts|count || $applicable_discounts|count}
+					<button type="submit" class="btn btn-primary">Save discounts</button>
+				{/if}
+			</span>
+			<button type="button" class="btn view-back">Back</button>
+		</div>
+	</form>
+</div>
+
+<script type="text/javascript">
+
+	$('th input[type="checkbox"]').change(function ()
+	{
+		var checked = $(this).attr('checked') ? true : false;
+		
+		$('td input.discount'+$(this).data('discount')).attr('checked', checked).trigger('change');
+	});
+	
+	$('td input[type="checkbox"]').change(function ()
+	{
+		var checked = $(this).attr('checked') ? true : false;
+		
+		$(this).prev().attr('disabled', checked);
+		
+		var all_unchecked = true;
+		
+		$('td input.discount'+$(this).data('discount')).each(function ()
+		{
+			if ($(this).attr('checked'))
+			{
+				all_unchecked = false;
+				return false;
+			}
+		});
+		
+		$('th input.discount'+$(this).data('discount')).attr('checked', !all_unchecked);
+	})
+	.trigger('change');
+	
+	/*$('tr.coupon a.edit').click(function ()
+	{
+		$('.row.coupon_code').slideDown(250);
+		return false;
+	});*/
+	
+	$('.row.coupon_code button.apply').click(function ()
+	{
+		$form = $(this).closest('form');
+		
+		var data = $form.find('table input').attr('disable', true);
+		
+		$form.attr('action', $form.attr('action')+'?redirect={$request.uri}?coupon_applied=true');
+		$form.trigger('submit');
+		
+		return false;
+	});
+	$('.row.coupon_code button.nevermind').click(function ()
+	{
+		$('.row.coupon_code').slideUp(250);
+		return false;
+	});
+	
+</script>

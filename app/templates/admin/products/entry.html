@@ -1,0 +1,287 @@
+{extend "admin"}
+
+{extend "default-entry" for="products"}
+{$product = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{$product.name|default:"Not found"}</h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">Close</a>
+		</div>
+	</div>
+	<form class="view-body tabbable" method="post" action="/products/entry/{$product.id}" enctype="multipart/form-data">
+		{render "messages"}
+		<div class="view-content">
+			{if $product}
+				<ul class="nav nav-pills">
+					<li class="{if !$params.tab}active{/if}"><a href="">Details</a></li>
+					<li class="{if $params.tab == "variants"}active{/if} variants"><a href="" data-pane="variants">Variants</a></li>
+					<li class="{if $params.tab == "images"}active{/if} images"><a href="" data-pane="images">Images</a></li>
+					<li class="{if $params.tab == "categories"}active{/if}"><a href="" data-pane="categories">Categories</a></li>
+					<li class="{if $params.tab == "stock"}active{/if}"><a href="" data-pane="stock">Stock</a></li>
+				</ul>
+				<div class="tab-content">
+					<div class="tab-pane default {if !$params.tab}active{/if}">
+						{if $product.items|count}
+							<table class="table table-bordered table-condensed">
+								<tr>
+									<th>Bundle item</th>
+									<th>Quantity</th>
+								</tr>
+								{foreach $product.items as $item_id => $item}
+									{$value = $value + $item.price*$item.quantity}
+									{$cost = $cost + $item.cost*$item.quantity}
+									{$weight = $weight + $item.weight*$item.quantity}
+									<tr>
+										<td>
+											<div class="with-actions">
+												<a class="view-link" href="/products/entry/{$item.id}">{$item.name}</a>
+												<code class="act">
+													<a class="view-link" href="/products/bundle/{$product.id}/items/{$item_id}">edit</a>
+												</code>
+											</div>
+										</td>
+										<td>{$item.quantity}</td>
+									</tr>
+								{/foreach}
+								<tr>
+									<th colspan="2">Value: {$value|money} &nbsp; Cost: {$cost|money} &nbsp; Weight: {$weight}</th>
+								</tr>
+							</table>
+							<button type="button" class="btn btn-success view-link" data-href="/products/bundle/{$product.id}" data-post="true"><i class="icon-plus-sign icon-white"></i> Add product</button>
+							<br />
+							<br />
+						{elseif $product.is_bundle}
+							<table class="table table-bordered">
+								<tr>
+									<td><a class="view-link" href="/products/bundle/{$product.id}">Add product to bundle &rarr;</a></td>
+								</tr>
+							</table>
+						{/if}
+						<div class="row">
+							<div class="field control-group span2">
+								<label>{if $product.is_bundle}Bundle{else}Product{/if} name <span class="error">{$errors.name|default:$errors.slug}</span></label>
+								<input type="text" name="product[name]" value="{$product.name|htmlspecialchars}" />
+								<div class="row">
+									{if !$product.is_bundle}
+										<div class="field control-group span1">
+											<label>SKU <span class="error">{$errors.sku}</span></label>
+											<input type="text" name="product[sku]" value="{$product.sku}" />
+										</div>
+										<div class="field control-group span1">
+											<label>Weight (lbs) <span class="error">{$errors.weight}</span></label>
+											<input type="text" name="product[weight]" value="{$product.weight}" />
+										</div>
+									{/if}
+									<div class="field control-group span1">
+										<label>Price <span class="error">{$errors.price}</span></label>
+										<input type="text" name="product[price]" value="{$product.price}" class="numeric" />
+									</div>
+									{if !$product.is_bundle}
+										<div class="field control-group span1">
+											<label>Cost <span class="error">{$errors.cost}</span></label>
+											<input type="text" name="product[cost]" value="{$product.cost}" class="numeric" />
+										</div>
+									{/if}
+								</div>
+							</div>
+							<div class="field control-group span2">
+								<label>Default image</label>
+								<div class="image default" data-upload="/upload/products/{$product.id}">
+									<img src="{image for=$product width=190 height=154 padded=true default="/images/blank.png"}?{$smarty.now}" />
+									<span><em class="name"></em></span>
+									<input type="file" class="upload" name="default" />
+									<input type="hidden" class="uploaded" name="product[images][default]" value="" />
+								</div>
+							</div>
+						</div>
+						<!-- Special pricing details -->
+						{render "products/pricing" enabled=false}
+						<div class="row">
+							<div class="field control-group span4">
+								<label>Description <span class="error">{$errors.description}</span></label>
+								<textarea type="text" name="product[description]" rows="6">{$product.description|escape}</textarea>
+							</div>
+						</div>
+						<div class="row">
+							<div class="field control-group span4">
+								<label>Slug <span class="error">{$errors.slug}</span></label>
+								<input type="text" name="product[slug]" value="{$product.slug}" />
+							</div>
+						</div>
+						<div class="row">
+							<div class="field control-group span2">
+								<label>Status</label>
+								<select name="product[is_active]">
+									<option value="true" {if $product.is_active === true}selected="selected"{/if}>Active</option>
+									<option value="false" {if !$product.is_active}selected="selected"{/if}>Not active</option>
+									<option value="discontinued" {if $product.is_active === "discontinued"}selected="selected"{/if}>Discontinued</option>
+								</select>
+							</div>
+						</div>
+						<div class="row">
+							<div class="field control-group span4">
+								<label>Page title <span class="error">{$errors.page_title}</span></label>
+								<input type="text" name="product[page_title]" value="{$product.page_title}" />
+							</div>
+						</div>
+						<div class="row">
+							<div class="field control-group span4">
+								<label>Page description <span class="error">{$errors.page_desc}</span></label>
+								<textarea type="text" name="product[page_desc]">{$product.page_desc|escape}</textarea>
+							</div>
+						</div>
+						<div class="row">
+							<div class="field control-group span4">
+								<label>Page keywords <span class="error">{$errors.page_keywords}</span></label>
+								<textarea type="text" name="product[page_keywords]">{$product.page_keywords|escape}</textarea>
+							</div>
+						</div>
+					</div>
+					<div class="tab-pane variants {if $params.tab == variants}active{/if}">
+						{if $product.variants|count}
+							<table class="table table-condensed table-bordered">
+								<tr>
+									<th>Variant name</th>
+									<th>SKU</th>
+									<th>Price</th>
+								</tr>
+								{foreach $product.variants as $id => $variant}
+									<tr>
+										<td>
+											<div class="with-actions">
+												{$variant.name}
+												<code class="act">
+													<a class="view-link" href="/products/variant/{$product.id}/variants/{$id}">edit</a>
+												</code>
+											</div>
+										</td>
+										{if $variant.sku}
+											<td>{$variant.sku}</td>
+										{else}
+											<td class="muted">{$product.sku}</td>
+										{/if}
+										{if $variant.price}
+											<td>{$variant.price|money}</td>
+										{else}
+											<td class="muted">{$product.price|money}</td>
+										{/if}
+									</tr>
+								{/foreach}
+							</table>
+						{else}
+							<table class="table table-bordered">
+								<tr>
+									<td><a href="/products/variant/{$product.id}" class="view-link">Add variant &rarr;</a></td>
+								</tr>
+							</table>
+						{/if}
+					</div>
+					<div class="tab-pane pricing {if $params.tab == pricing}active{/if}">
+						
+					</div>
+					<div class="tab-pane images {if $params.tab == "images"}active{/if}">
+						<div class="row">
+							{render "imageset" for=$product type="products"}
+						</div>
+					</div>
+					<div class="tab-pane categories {if $params.tab == "categories"}active{/if}">
+					
+						<input type="hidden" name="product[categories]" value="" />
+						
+						{if $categories = get("/categories", [parent_id => null])}
+							<table class="table table-bordered table-condensed">
+								{foreach $categories as $category}
+									{if $category.children}
+										<tr>
+											<th colspan="2">{$category.name}</th>
+										</tr>
+										{* Child categories only one level deep for now *}
+										{foreach $category.children as $child}
+											<tr>
+												<td class="checkbox">
+													<input type="checkbox" name="product[categories][]" value="{$child.id}" {if $product.category_ids && $child.id|in:$product.category_ids}checked="checked"{/if} id="category_{$child.id}" />
+												</td>
+												<td>
+													<label for="category_{$child.id}">{$child.name}</label>
+												</td>
+											</tr>
+										{/foreach}
+									{/if}
+								{/foreach}
+							</table>
+							<div class="row">
+								<div class="field control-group span4">
+									<label>Primary category</label>
+									<select name="product[primary_category_id]">
+										<option value="">...</option>
+										{foreach $categories as $category}
+											<optgroup label="{$category.name}">
+												{foreach $category.children as $child}
+													{$selected = ($product.primary_category_id == $child.id)}
+													<option value="{$child.id}" {if $selected}selected="selected"{/if}>
+														{$child.name}
+													</option>
+												{/foreach}
+											</optgroup>
+										{/foreach}
+									</select>
+								</div>
+							</div>
+						{else}
+							<table class="table table-bordered">
+								<tr>
+									<td>
+										None found.
+										<a href="/categories/new" class="view-link">Create category &rarr;</a>
+									</td>
+								</tr>
+							</table>
+						{/if}
+						
+					</div>
+					<div class="tab-pane stock {if $params.tab == "stock"}active{/if}">
+					
+						<div class="row">
+							<div class="field out-of-stock span4">
+								<label class="checkbox">
+									<input type="hidden" name="product[out_of_stock]" value="false" />
+									<input type="checkbox" name="product[out_of_stock]" value="true" {if $product.out_of_stock}checked="checked"{/if} />
+									Out of stock?
+								</label>
+							</div>
+						</div>
+						<fieldset class="out-of-stock">
+							<div class="row">
+								<div class="field span4">
+									<label>Message (Optional)</label>
+									<textarea name="product[restock_message]" rows="10" placeholder="We're sorry, this item is temporarily out of stock.">{$product.restock_message}</textarea>
+								</div>
+							</div>
+						</fieldset>
+					</div>
+				</div>
+			{else}
+				<p>Oops.</p>
+			{/if}
+		</div>
+		<div class="view-footer actions">
+			{if $product}
+				<span class="tab-controls default pricing images categories stock">
+					<button type="submit" class="btn btn-primary">Save changes</button>
+				</span>
+				<span class="tab-controls variants">
+					<button type="button" class="btn btn-success view-link" data-href="/products/variant/{$product.id}/variants"><i class="icon-plus-sign icon-white"></i> New variant</button>
+				</span>
+				<button type="button" class="btn view-cancel">Close</button>
+				{if !$product.is_deleted}
+					<a class="trash view-link" href="/products/entry/{$product.id}?product[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+				{else}
+					<a class="trash view-link undo" href="/products/entry/{$product.id}?product[:restore]=true" data-post="true">Undo <i class="icon-trash"></i></a>
+				{/if}
+			{/if}
+		</div>
+	</form>
+</div>

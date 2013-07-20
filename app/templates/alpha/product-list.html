@@ -1,0 +1,25 @@
+{* Render a list of products in a grid ($with) *}
+<div class="product-list">
+	<div class="row">
+		{foreach $with as $product}
+			<div class="product-list-item span3">
+				<span class="product-list-image">
+					<a href="/products/{$product.slug}">
+						<img src="{image for=$product width=200 height=200 padded=true}" />
+					</a>
+				</span>
+				<a class="product-list-details" href="/products/{$product.slug}">
+					<span class="product-list-name">
+						{$product.name}
+					</span>
+					<span class="product-list-price">
+						{$product.price|money}
+					</span>
+				</a>
+			</div>
+			{if $product@iteration % 4 == 0}
+				</div><div class="row">
+			{/if}
+		{/foreach}
+	</div>
+</div>

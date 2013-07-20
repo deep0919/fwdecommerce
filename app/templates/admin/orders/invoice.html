@@ -1,0 +1,104 @@
+{extend "admin"}
+
+{render "default-entry" for="orders"}
+
+{$order = $request.entry}
+{$payment = $request.related_entry}
+
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{if $payment.id}Invoice{else}New invoice{/if} <small>/ Order #{$order.id}</small>
+			{if $payment.id}<span class="label label-{if $payment.status|in_array:[sent,paid]}success{elseif $payment.status|in_array:[overdue,cancelled]}important{/if}">{$payment.status}</span>{/if}</h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="/orders/invoice/{$order.id}/payments{if $payment.id}/{$payment.id}{else}?reload=true{/if}">
+		{render "messages"}
+		<div class="view-content">
+			{* Show payment method error *}
+			{if $errors.method}
+				<div class="alert alert-error">
+					{$errors.method}
+				</div>
+			{/if}
+			<div class="row">
+				<div class="field control-group span1">
+					<label>Amount $ <span class="error hidden">{$errors.amount}</span></label>
+					<input type="text" name="payment[amount]" value="{$payment.amount|total}" class="numeric {if !$payment.amount}focus{/if} {if $payment.date_paid}disabled{/if}" {if $payment.date_paid}disabled="disabled"{/if} />
+				</div>
+				<div class="field control-group span2">
+					<label>Reference # (Optional) <span class="error">{$errors.ref}</span></label>
+					<input type="text" name="payment[ref]" value="{$payment.ref}" />
+				</div>
+			</div>
+			
+			{if $payment.id}
+				{if $payment.date_paid}
+					<fieldset>
+						<h4>Invoice paid on {$payment.date_paid|date_format} &mdash; <a class="view-link" href="/orders/invoice/{$order.id}/payments/{$payment.id}?payment[date_paid]=&refresh=true" data-post="true">Undo</a></h4>
+					</fieldset>
+				{else}
+					<fieldset>
+						<div class="row">
+							<div class="field control-group span3">
+								<label><b>Invoice paid? Enter date of receipt</b></label>
+								<input type="text" name="payment[date_paid]" placeholder="Example: {$smarty.now|date_format}" />
+							</div>
+						</div>
+						<div class="row">
+							<div class="field control-group span3">
+								<label>Due date</label>
+								<input type="text" name="payment[date_due]" value="{$payment.date_due}" />
+							</div>
+						</div>
+						{if $payment.date_sent}
+							<i>Last sent {$payment.date_sent|date_format}</i>
+						{/if}
+					</fieldset>
+				{/if}
+			{/if}
+		</div>
+		<div class="view-footer actions">
+		
+			{if $payment.id}
+			
+				<button type="submit" class="btn btn-primary">Save invoice</button>
+				{if !$payment.date_paid}
+					<button type="submit" class="btn btn-success preview">Preview &amp; Send</button>
+				{/if}
+				<button type="button" class="btn view-link" data-href="/orders/entry/{$order.id}?tab=payment">Back</button>
+				
+				{if  !$payment.is_deleted}
+					<a class="trash view-link" href="/orders/invoice/{$order.id}/payments/{$payment.id}?payment[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+				{else}
+					<a class="trash view-link undo" href="/orders/invoice/{$order.id}/payments/{$payment.id}?payment[:delete]=true" data-post="true">Undo <i class="icon-trash"></i></a>
+				{/if}
+			{else}
+				<input type="hidden" name="payment[method]" value="invoice" />
+				<input type="hidden" name="payment[order_id]" value="{$order.id}" />
+				<input type="hidden" name="payment[action]" value="charge" />
+				<button type="submit" class="btn btn-primary">Create invoice</button>
+				<button type="button" class="btn view-back">Cancel</button>
+			{/if}
+		</div>
+	</form>
+</div>
+
+<script type="text/javascript">
+	
+	$('button.preview').click(function ()
+	{
+		$form = $(this).closest('form')
+			.append('<input type="hidden" name="reload" value="true" />');
+		
+		setTimeout(function ()
+		{
+			window.open("/emails/preview/invoice/html/{$payment.id}", "invoice_preview");
+			
+		}, 500);
+	});
+	
+</script>

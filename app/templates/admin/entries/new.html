@@ -1,0 +1,40 @@
+{extend "admin"}
+
+{args $channel_slug}
+{get $channel from "/channels/$channel_slug"}
+
+{extend "default-entry" for="channels" id=$channel.id related="entries" redirect_related=true}
+
+{$entry = $request.related_entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>New {$channel.name|lower|singularize} entry</h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="">
+		<div class="view-content">
+			{render "messages"}
+			{if $channel.fields}
+				{foreach $channel.fields as $field}
+					<div class="row">
+						{render "entries/field" field=$field entry=$entry editable=true error=$errors[$field.id]}
+					</div>
+				{/foreach}
+			{else}
+				<h3>Channel has no entry fields</h3>
+				<button type="button" class="btn btn-success view-link" data-href="/channels/field/{$channel.id}/fields"><i class="icon-plus-sign icon-white"></i> Edit {$channel.name|lower}</a>
+			{/if}
+		</div>
+		<div class="view-footer">
+			<div class="actions">
+				<button type="submit" class="btn btn-primary">Create entry</button>
+				<button type="button" class="btn view-cancel">Cancel</button>
+			</div>
+		</div>
+	</form>
+</div>
+

@@ -1,0 +1,223 @@
+{* Alias cart order *}
+{$order = $request.cart.order}
+
+{* Copy billing details from shipping? *}
+{if !$order.billing && $order.shipping}
+	{$order.billing = [
+		name => $order.name,
+		address => $order.shipping.address,
+		zip => $order.shipping.zip
+	]}
+{/if}
+
+<fieldset class="form-fieldset">
+	<h4 class="form-header">Shipping Information</h4>
+	<div class="row">
+		<p class="form-details span4">
+			{$order.name|escape}<br />
+			{$order.shipping.address|escape}<br />
+			{$order.shipping.city|escape}, {$order.shipping.state|escape} {$order.shipping.zip|escape}
+			{if $order.shipping.country}({$order.shipping.country}){/if}
+		</p>
+		<p class="form-details span4">
+			Method: {$order.shipping.method}<br />
+			E-mail: {$order.email|escape}<br />
+			{if $order.phone}
+				Phone: {$order.phone|escape}<br />
+			{/if}
+		</p>
+		<p class="form-details span4">
+			<a href="/checkout">Edit details</a>
+		</p>
+	</div>
+</fieldset>
+
+<fieldset class="form-fieldset checkout-billing-info">
+	<h4 class="form-header">Payment Information</h4>
+	<div class="row">
+		<div class="form-field control-group span4">
+			<label>Name on card</label>
+			<input type="text" class="name" name="order[billing][name]" value="{$order.billing.name|escape}" />
+		</div>
+	</div>
+	<div class="row">
+		<div class="form-field control-group span4">
+			<label>Credit card number</label>
+			<input type="text" class="cardnum focus" autocomplete="off"
+				data-default-name="order[billing][card][number]" />
+		</div>
+	</div>
+	<div class="row">
+		<div class="form-field control-group span1">
+			<label>MM</label>
+			<input type="text" class="cardexp_month" maxlength="2" autocomplete="off" placeholder="MM"
+				data-default-name="order[billing][card][exp_month]" />
+		</div>
+		<div class="form-field control-group span1">
+			<label>YYYY</label>
+			<input type="text" class="cardexp_year" maxlength="4" autocomplete="off" placeholder="YYYY"
+				data-default-name="order[billing][card][exp_year]" />
+		</div>
+		<div class="form-field control-group span2">
+			<label title="Usually a 3-4 digit number found on the back of your card">Security code <b class="help-tip">?</b></label>
+			<input type="text" class="cardcvc" autocomplete="off"
+				data-default-name="order[billing][card][cvc]" />
+		</div>
+	</div>
+</fieldset>
+
+<fieldset class="form-fieldset checkout-billing-info">
+	<div class="row">
+		<div class="form-field control-group span4">
+			<label>Billing address</label>
+			<input type="text" class="address" name="order[billing][address]" value="{$order.billing.address|escape}" />
+		</div>
+	</div>
+	<div class="row">
+		<div class="form-field control-group last span2">
+			<label>Zip code</label>
+			<input type="text" class="zip" name="order[billing][zip]" value="{$order.billing.zip|escape}" />
+		</div>
+	</div>
+	<!-- Suggest billing method (card) -->
+	<input type="hidden" name="order[billing][method]" value="card" />
+</fieldset>
+
+{* Get payment settings *}
+{$payment_settings = "/settings/payments"|get}
+
+{* If Stripe is the default gateway, use Stripe.js *}
+{if $payment_settings.card.gateway == stripe}
+
+	{* Get publishable key from payment settings *}
+	{$publishable_key = $payment_settings.card.publishable_key}
+
+	<script type="text/javascript" src="https://js.stripe.com/v1/"></script>
+	<script type="text/javascript">
+	
+		$('form.checkout').submit(function (e)
+		{
+			$form = $(this);
+			
+			// Clear all previous errors.
+			$form.find('input,select,textarea').trigger('error_clear');
+			
+			// Build stripe card info.
+			var card = {
+				number: $form.find('.checkout-billing-info input.cardnum').val(),
+				cvc: $form.find('.checkout-billing-info input.cardcvc').val(),
+				exp_month: $form.find('.checkout-billing-info input.cardexp_month').val(),
+				exp_year: $form.find('.checkout-billing-info input.cardexp_year').val(),
+				name: $form.find('.checkout-billing-info input.name').val(),
+				address_line1: $form.find('.checkout-billing-info input.address').val(),
+				address_zip: $form.find('.checkout-billing-info input.zip').val()
+			};
+			
+			// Already validated?
+			if ($form.data('stripe-card') && $form.data('stripe-card') == $.param(card))
+			{
+				// Results will get picked up in $form.data('order')
+				return true;
+			}
+			// Need to validate...
+			else
+			{
+				// Stripe identity.
+				Stripe.setPublishableKey('{$publishable_key}');
+	
+				// Validate basic inputs.
+				var card_invalid = null;
+				
+				if (!Stripe.validateCardNumber(card.number))
+				{
+					card_invalid = 'input.cardnum';
+				}
+				else if (!Stripe.validateExpiry(card.exp_month, card.exp_year))
+				{
+					card_invalid = 'input.cardexp_month,input.cardexp_year';
+				}
+				else if (!Stripe.validateCVC(card.cvc))
+				{
+					card_invalid = 'input.cardcvc';
+				}
+				
+				// Invalid card field?
+				if (card_invalid)
+				{
+					$form.find(card_invalid).trigger('error', ['']);
+					
+					$form.trigger('loading_done');
+					return false;
+				}
+				else
+				{
+					$form.trigger('loading');
+					
+					try {
+						// Get stripe.
+						Stripe.createToken(card, function (status, response)
+						{
+							// Error from stripe?
+							if (response.error)
+							{
+								$form.data('stripe-card', null);
+								
+								$form.find('input.cardnum').trigger('error', ['('+response.error.message+')']).focus();
+								
+								$form.trigger('loading_done');
+							}
+							// Validated token!
+							else
+							{
+								// Remember good card values.
+								$form.data('stripe-card', $.param(card));
+								
+								// Separate stripe token from card object.
+								var billing_card = response.card;
+								
+								response.card = null;
+								var billing_stripe = response;
+								
+								// Save response data and re-submit.
+								$form.data('order', 
+									$.param({ order: { billing: {
+										stripe: billing_stripe, card: billing_card
+									}}})
+								);
+								
+								// Trigger form submit again.
+								$form.trigger('loading_done');
+								$form.trigger('submit');
+							}
+						});
+					}
+					catch (err)
+					{
+						$form.find('input.cardnum').trigger('error', ['('+err+')']);
+						$form.trigger('loading_done');
+					}
+				}
+			}
+			
+			// Prevent submit default.
+			return false;
+		});
+
+	</script>
+
+{else}
+
+	{* Non-stripe credit card gateway *}
+	<script type="text/javascript">
+		
+		// Append default field names for submission.
+		$('.checkout-billing-info input').each(function ()
+		{
+			if ($(this).data('default-name'))
+			{
+				$(this).attr('name', $(this).data('default-name'));
+			}
+		});
+		
+	</script>
+{/if}

@@ -1,0 +1,128 @@
+{extend "admin"}
+
+{extend "default-entry" for="categories"}
+{$category = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{if $category.parent}{$category.parent.name} / {/if}{$category.name} <small>/ Category #{$category.id}</small></h2>
+		<div class="actions">
+			<a class="btn view-back" href="">Back</a>
+		</div>
+	</div>
+	<form class="view-body tabbable" method="post" action="/categories/entry/{$category.id}" enctype="multipart/form-data">
+		{render "messages"}
+		<div class="view-content">
+			<ul class="nav nav-pills">
+				<li class="{if !$params.tab}active{/if}"><a href="">Details</a></li>
+				<li class="{if $params.tab == "products"}active{/if}"><a href="" data-pane="products">Products</a></li>
+				<li class="{if $params.tab == "content"}active{/if}"><a href="" data-pane="content">Content</a></li>
+				{if $category.parent}
+
+					{* Category has images? *}
+					{$image_settings = "/settings/images/categories"|get}
+
+					{if $imageset = $image_settings[$category.parent.slug]}
+						<li class="{if $params.tab == "images"}active{/if}"><a href="" data-pane="images">Images</a></li>
+					{/if}
+				{/if}
+			</ul>
+			<div class="tab-content">
+				<div class="tab-pane default {if !$params.tab}active{/if}">
+					<div class="row">
+						<div class="field control-group span2">
+							<label>Category name <span class="error">{$errors.name}</span></label>
+							<input type="text" name="category[name]" value="{$category.name}" />
+						</div>
+						<div class="field control-group span2">
+							<label>Slug <span class="error">{$errors.slug}</span></label>
+							<input type="text" name="category[slug]" value="{$category.slug}" />
+						</div>
+					</div>
+					{if $category.children}
+						<h4>Child categories</h4>
+						<ul>
+							{foreach $category.children as $child}
+								<li><a class="view-link" href="/categories/entry/{$child.id}">{$child.name}</a></li>
+							{/foreach}
+						</ul>
+					{else}
+						<div class="row">
+							<div class="field control-group span2">
+								<label>Parent category <span class="error">{$errors.parent_id}</span></label>
+								<select name="category[parent_id]">
+									<option value="false">None</option>
+									{foreach get("/categories", [parent_id => null]) as $parent}
+										{if $parent.id != $category.id}
+											<option value="{$parent.id}" {if $category.parent_id == $parent.id}selected="selected"{/if}>{$parent.name}</option>
+										{/if}
+									{/foreach}
+								</select>
+							</div>
+						</div>
+					{/if}
+				</div>
+				<div class="tab-pane products {if $params.tab == "products"}active{/if}">
+				
+					{foreach $category.children as $child}
+						<h4><a href="/categories/entry/{$child.id}" class="view-link">{$child.name}</a></h4>
+						<ul>
+							{foreach $child.products as $product}
+								<li><a class="view-link" href="/products/entry/{$product.id}?tab=categories">{$product.name}</a></li>
+							{foreachelse}
+								<li>No products</li>
+							{/foreach}
+						</ul>
+					{foreachelse}
+						<ul>
+							{foreach $category.products as $product}
+								<li><a class="view-link" href="/products/entry/{$product.id}?tab=categories">{$product.name}</a></li>
+							{foreachelse}
+								<li>No products</li>
+							{/foreach}
+						</ul>
+					{/foreach}
+					
+				</div>
+				<div class="tab-pane content {if $params.tab == "content"}active{/if}">
+				
+					<div class="row">
+						<div class="field control-group span4">
+							<label>Description <span class="error">{$errors.description}</span></label>
+							<textarea name="category[description]">{$category.description|escape}</textarea>
+						</div>
+					</div>
+					
+				</div>
+				{if $imageset}
+					{* Make sure it's an array *}
+					{if !$imageset|is_array}
+						{$imageset = [$imageset]}
+					{/if}
+					<div class="tab-pane images {if $params.tab == "images"}active{/if}">
+						<div class="row">
+							{render "imageset" for=$category type="categories" imageset=$imageset}
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<span class="tab-controls default content images">
+				<button type="submit" class="btn btn-primary">Save changes</button>
+			</span>
+			<span class="tab-controls products">
+				{if !$category.children && $category.products}
+					<button type="button" class="btn btn-primary view-link" data-href="/categories/products/{$category.id}">Sort products</button>
+				{/if}
+			</span>
+			<button type="button" class="btn view-cancel">Close</button>
+			{if !$category.is_deleted}
+				<a class="trash view-link" href="/categories/entry/{$category.id}?category[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+			{else}
+				<a class="trash view-link undo" href="/categories/entry/{$category.id}?category[:restore]=true" data-post="true">Undo <i class="icon-trash"></i></a>
+			{/if}
+		</div>
+	</form>
+</div>

@@ -1,0 +1,43 @@
+{extend "admin"}
+
+{extend "default-entry" for="orders"}
+
+{$order = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Credit account <small>/ Order #{$order.id}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="/orders/credit/{$order.id}/payments{if $request.related_id}/{$request.related_id}{/if}?tab=payment">
+		{render "messages"}
+		<div class="view-content">
+			{if $errors.method}
+				<div class="alert alert-error">
+					{$errors.method}
+				</div>
+			{/if}
+			<div class="row">
+				<div class="field control-group span1">
+					<label>Amount <span class="error">{if $errors.amount}!{/if}</span></label>
+					<input type="text" name="payment[amount]" value="{$params.payment.amount}" class="numeric {if !$params.payment.amount}focus{/if}" />
+				</div>
+				<div class="field control-group span3">
+					<label>Credit reason <span class="error">{$errors.reason}</span></label>
+					<input type="text" name="payment[reason]" value="{$params.payment.reason}" class="{if $params.payment.amount}focus{/if}" />
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<input type="hidden" name="payment[method]" value="credit" />
+			<input type="hidden" name="payment[order_id]" value="{$order.id}" />
+			<input type="hidden" name="payment[action]" value="credit" />
+			<button type="submit" class="btn btn-primary">Submit credit</button>
+			<button type="button" class="btn view-back">Cancel</button>
+		</div>
+	</form>
+</div>
+

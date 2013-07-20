@@ -1,0 +1,43 @@
+{extend "admin"}
+
+{extend "default-entry" for="discounts"}
+
+{$discount = $request.entry}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Code history <small>/ {$discount.name}</small></h2>
+	</div>
+	<div class="view-body">
+		<div class="view-content">
+			<div class="row">
+				<div class="field control-group span2">
+					<label>Codes created</label>
+					{render "discounts/code-input" codes=$discount.code_history}
+				</div>
+				<div class="field control-group span2">
+					<label>Codes used</label> 
+					{foreach $discount.code_history as $key => $code}
+						{if $discount.codes_used|is_array}
+							{$found = array_search($code, $discount.codes_used)}
+						{else}
+							{$found = false}
+						{/if}
+						{$used_codes[$key] = ($found !== false) ? $code : " "}
+					{/foreach}
+					{if $discount.codes_used|is_array}
+						{foreach $discount.codes_used as $key => $code}
+							{if array_search($code, $used_codes) === false}
+								{$used_codes[] = $code}
+							{/if}
+						{/foreach}
+					{/if}
+					{render "discounts/code-input" codes=$used_codes}
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<button type="button" class="btn view-back">Back</button>
+		</div>
+	</div>
+</div>

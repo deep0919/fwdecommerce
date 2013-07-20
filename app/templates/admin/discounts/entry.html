@@ -1,0 +1,204 @@
+{extend "admin"}
+
+{extend "default-entry" for="discounts"}
+{$discount = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>
+			{$discount.name}
+			<small>
+				{if $discount.is_valid}
+					<span class="label label-success">Valid</span>
+				{else}
+					<span class="label">Not valid</span>
+				{/if}
+			</small>
+		</h2>
+		<div class="actions">
+			<a class="btn view-back" href="">Back</a>
+		</div>
+	</div>
+	<form class="view-body tabbable" method="post" action="/discounts/entry/{$discount.id}">
+		{render "messages"}
+		<div class="view-content">
+			<ul class="nav nav-pills">
+				<li class="{if !$params.tab}active{/if}"><a href="">Details</a></li>
+				{if $discount.apply_to}
+					<li class="{if $params.tab == "apply"}active{/if}"><a href="" data-pane="apply">{pluralize $discount.apply_to|ucfirst}</a></li>
+				{/if}
+				<li class="{if $params.tab == "orders"}active{/if}"><a href="" data-pane="orders">Orders</a></li>
+			</ul>
+			<div class="tab-content">
+				<div class="tab-pane default {if !$params.tab}active{/if}">
+				
+					{if $discount.rules}
+						<table class="table table-bordered table-condensed">
+							<tr>
+								<th colspan="3">Discount rules</th>
+							</tr>
+							{foreach $discount.rules as $rule_id => $rule}
+								<tr>
+									<td>
+										<div class="with-actions">
+											<span class="label">{$rule.type|default:"sub-total"}</span>&nbsp;
+											{$rule.value} off
+											<code class="act">
+												<a class="view-link" href="/discounts/rule/{$discount.id}/rules/{$rule_id}">edit</a>
+											</code>
+										</div>
+									</td>
+									<td>
+										{render "discounts/ruledesc" rule=$rule}
+									</td>
+								</tr>
+							{/foreach}
+						</table>
+					{else}
+						<!--<table class="table table-bordered">
+							<tr>
+								<td>No discounts</td>
+							</tr>
+						</table>-->
+					{/if}
+					<button type="button" class="btn btn-success view-link" data-href="/discounts/rule/{$discount.id}/rules"><i class="icon-plus-sign icon-white"></i> Add discount</button>
+					<br /><br />
+					<div class="row">
+						<div class="field control-group span2">
+							<label>Discount name <span class="error">{$errors.name}</span></label>
+							<input type="text" name="discount[name]" value="{$discount.name}" />
+						</div>
+					</div>
+					<div class="row">
+						<div class="field control-group span4">
+							<label>Public description <span class="error">{$errors.description}</span></label>
+							<textarea name="discount[description]" cols="2">{$discount.description|htmlspecialchars}</textarea>
+						</div>
+					</div>
+					<div class="row">
+						<div class="field control-group span2">
+							<label>Valid from (date) <span class="error">{$errors.conditions.date_valid}</span></label>
+							<input type="text" name="discount[conditions][date_valid]" value="{$discount.conditions.date_valid}" />
+						</div>
+						<div class="field control-group span2">
+							<label>Expires on (date) <span class="error">{$errors.conditions.date_expires}</span></label>
+							<input type="text" name="discount[conditions][date_expires]" value="{$discount.conditions.date_expires}" />
+						</div>
+					</div>
+					<div class="row">
+						<div class="field control-group span2">
+							<label>Status</label>
+							<select name="discount[conditions][is_active]">
+								<option value="true" {if $discount.conditions.is_active}selected="selected"{/if}>Active</option>
+								<option value="false" {if !$discount.conditions.is_active}selected="selected"{/if}>Not active</option>
+							</select>
+						</div>
+						<div class="field control-group span1">
+							<label>Expire after # uses? <span class="error">{$errors.conditions.max}</span></label>
+							<input type="text" name="discount[conditions][max]" value="{$discount.conditions.max}" />
+						</div>
+					</div>
+					
+				</div>
+				<div class="tab-pane apply {if $params.tab == "apply"}active{/if}">
+				
+					{if $discount.apply_to == "code"}
+					
+						{* Apply by coupon code *}
+						<div class="row">
+							<div class="field control-group span2">
+								<label>Enter discount codes ({$discount.codes|count}) <span class="error">{$errors.codes}</span></label>
+								{render "discounts/code-input" codes=$discount.codes name="discount[codes]"}
+							</div>
+							<div class="field control-group span1">
+								<label>Max # uses per code <span class="error">{$errors.conditions.max_per_code}</span></label>
+								<input type="text" name="discount[conditions][max_per_code]" value="{$discount.conditions.max_per_code}" />
+							</div>
+						</div>
+						
+					{elseif $discount.apply_to == "role"}
+					
+						{* Apply by account role *}
+						<input type="hidden" name="discount[account_roles]" value="" />
+						<table class="table table-bordered table-condensed checkboxes">
+							<tr>
+								<th colspan="2">Apply valid discount to:</th>
+							</tr>
+							{foreach get("/settings/roles") as $role => $opt}
+								{$role = (is_numeric($role) && is_string($opt)) ? $opt : $role}
+								{if !is_numeric($role)}
+									<tr>
+										<td class="checkbox">
+											<input type="checkbox" name="discount[account_roles][]" value="{$role}" {if is_array($discount.account_roles) && in_array($role, $discount.account_roles)}checked="checked"{/if} id="role_{$role}" />
+										</td>
+										<td>
+											<label for="role_{$role}">{$role|spacify|capitalize}
+											{if $opt.description}
+												<em class="muted">&mdash; {$opt.description}</em>
+											{/if}
+											</label>
+										</td>
+									</tr>
+								{/if}
+							{/foreach}
+						</table>
+						
+					{elseif $discount.apply_to == "account"}
+					
+						{* Apply by specific account (only one for now) *}
+						<div class="row">
+							<div class="field control-group span3">
+								<label>Apply valid discount to Account ID #:</label>
+								<input type="text" name="discount[account_ids][]" value="{$discount.account_ids.0}" />
+							</div>
+						</div>
+					{/if}
+				
+				</div>
+				<div class="tab-pane orders {if $params.tab == "orders"}active{/if}">
+					
+					{if $discount.orders}
+						<table class="table table-bordered table-condensed">
+							<tr>
+								<th colspan="5">Order(s) that used this discount:</th>
+							</tr>
+							{foreach $discount.orders as $order}
+								<tr>
+									<td><a class="view-link" href="/orders/entry/{$order.id}">Order #{$order.id}</a></td>
+									<td>{$order.grand_total|money}</td>
+									<td>{$order.coupon_code}</td>
+									<td>{$order.date_created|age_date}</td>
+								</tr>
+							{/foreach}
+						</table>
+					{else}
+						<table class="table table-bordered">
+							<tr>
+								<td>No orders have used this discount</td>
+							</tr>
+						</table>
+					{/if}
+					
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<span class="tab-controls default">
+				<button type="submit" class="btn btn-primary">Save changes</button>
+				{if !$discount.is_deleted}
+					<a class="trash view-link" href="/discounts/entry/{$discount.id}?discount[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+				{else}
+					<a class="trash view-link undo" href="/discounts/entry/{$discount.id}?discount[:restore]=true" data-post="true">Undo <i class="icon-trash"></i></a>
+				{/if}
+			</span>
+			<span class="tab-controls apply">
+				<button type="submit" class="btn btn-primary">Save changes</button>
+				{if $discount.apply_to == "code"}
+					<button type="button" class="btn view-link" data-href="/discounts/code-history/{$discount.id}">View history</button>
+				{/if}
+			</span>
+			<button type="button" class="btn view-cancel">Close</button>
+		</div>
+	</form>
+</div>

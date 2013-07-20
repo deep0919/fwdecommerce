@@ -1,0 +1,67 @@
+{extend "admin"}
+
+{extend "default-entry" for="orders"}
+
+{$order = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Refund <small>/ Order #{$order.id}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="/orders/refund/{$order.id}/payments{if $request.related_id}/{$request.related_id}{/if}?tab=payment">
+		{render "messages"}
+		<div class="view-content">
+			{if $errors.method}
+				<div class="alert alert-error">
+					{$errors.method}
+				</div>
+			{/if}
+			<div class="row">
+				<div class="field control-group span4">
+					<label>Method <span class="error">{$errors.method}</span></label>
+					<select name="payment[method]">
+						{foreach get("/settings/payments") as $method => $settings}
+							{* Restrict billing method to certain account role(s)? *}
+							{if $settings.roles|is_array && (($order.account.roles|is_array && !$order.account.roles|array_intersect:$settings.roles) || !$order.account.roles|is_array && ($order.billing.method != $method))}
+								{continue}
+							{/if}
+							{* Don't show card if payment info is not attached to order *}
+							{if $method == "card" && !$order.billing.card}
+								{continue}
+							{/if}
+							{* Don't show credit on this page *}
+							{if $method == "credit"}
+								{continue}
+							{/if}
+							<option value="{$method}" {if $params.payment.method == $method}selected="selected"{/if}>{$settings.name|default:$method|ucfirst} {if $method == "card"}({$order.billing.card.type} {$order.billing.card.last4}){/if}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>
+			<div class="row">
+				<div class="field control-group span1">
+					<label>Amount <span class="error">{if $errors.amount}!{/if}</span></label>
+					<input type="text" name="payment[amount]" value="{$params.payment.amount}" class="numeric {if !$params.payment.amount}focus{/if}" />
+				</div>
+				<div class="field control-group span3">
+					<label>Refund reason <span class="error">{$errors.reason}</span></label>
+					<input type="text" name="payment[reason]" value="{$params.payment.reason}" class="{if $params.payment.amount}focus{/if}" />
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			{if $params.payment.charge_id}
+				<input type="hidden" name="payment[charge_id]" value="{$params.payment.charge_id}" />
+			{/if}
+			<input type="hidden" name="payment[order_id]" value="{$order.id}" />
+			<input type="hidden" name="payment[action]" value="refund" />
+			<button type="submit" class="btn btn-primary">Submit refund</button>
+			<button type="button" class="btn view-back">Cancel</button>
+		</div>
+	</form>
+</div>
+

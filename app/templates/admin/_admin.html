@@ -1,0 +1,12 @@
+{* Logged in? *}
+{if $session.account_id}
+
+	{* Save account reference in request variable *}
+	{$request.account = get("/accounts/{$session.account_id}")}
+{/if}
+
+{* Page requires login? *}
+{if !$request.account && $requires_login !== false}
+		
+	{redirect "/login"}
+{/if}

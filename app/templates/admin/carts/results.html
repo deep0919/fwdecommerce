@@ -1,0 +1,47 @@
+{extend "admin"}
+
+{$query = [
+	search => $params.search,
+	where => $params.where,
+	page => $params.page
+]}
+
+{get $carts from "/carts" $query}
+
+{foreach $carts as $cart}
+	<li>
+		<span class="image count{if $cart.items|count <= 4}{$cart.items|count}{else}4{/if}">
+			{foreach $cart.items as $id => $item}
+				<img src="{image for=$item type="products" width=50 height=50}" />
+			{/foreach}
+			<span class="shadow"></span>
+		</span>
+		<div class="headline">
+			<a class="list-item" href="/carts/entry/{$cart.id}" id="item_carts_{$cart.id}"> 
+				<span class="name">Cart #{$cart.id} <small>/ {pluralize "{$cart.items|count} item"}</small></span>
+			</a>
+		</div>
+		<small>
+			<span class="">{$cart.sub_total|money}</span>
+			{if $cart.order}
+				<b class="bull">&bull;</b> <span>{$cart.order.name}</span>
+			{/if}
+			<span class="date">
+				{$cart.date_updated|age_date}
+			</span>
+			<span class="labels">
+				{if $cart.order_id}
+					<span class="label label-success">Order #{$cart.order_id}</span>
+				{elseif $cart.abandoned}
+					<span class="label label-important">Abandoned</span>
+				{else}
+					<span class="label">Shopping</span>
+				{/if}
+			</span>
+		</small>
+	</li>
+{foreachelse}
+	<li class="empty">No carts found</li>
+{/foreach}
+
+{render "loadmore" with=$carts query=$query url="/carts"}

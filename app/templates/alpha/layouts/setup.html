@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>
+		Alpha | Forward: the platform for custom e-commerce
+	</title>
+	
+	<!-- Bootstrap CDN -->
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap.min.css">
+	
+	<!-- Default Theme CSS -->
+	<link rel="stylesheet" href="/alpha/css/default.css" />
+</head>
+<body id="alpha_setup">
+	<div id="page">
+		<div id="content">
+			<div class="container">
+				<div class="content">
+					
+					<h2>Setup Alpha Test Data?</h2>
+
+					<p>This process will create test content, products, categories, and more.</p>
+					
+					<form method="post" action="?setup=yes">
+						<button type="submit" class="btn btn-large btn-cta">Yes, Setup Test Data</button>
+						<a class="btn btn-large" href="?setup=no">No, Skip It</a>
+					</form>
+					
+					{* Setup data *}
+					{if $params.setup == yes}
+					
+						{* channels *}
+						{$channels = [
+							1 => [
+								name => "Blogs",
+								slug => "blogs",
+								fields => [
+									1 => [
+										name => "Title",
+										id => "title",
+										type => "text",
+										sort => 1
+									],
+									2 => [
+										name => "Status",
+										id => "status",
+										type => "select",
+										sort => 2,
+										values => [
+											draft => "draft",
+											published => "published"
+										],
+										default => "draft"
+									],
+									3 => [
+										name => "Content",
+										id => "content",
+										type => "html",
+										sort => 3
+									],
+									4 => [
+										name => "Author",
+										id => "author",
+										type => "text",
+										sort => 4
+									],
+									5 => [
+										name => "Publish date/time",
+										id => "date_published",
+										type => "text",
+										sort => 5
+									],
+									6 => [
+										name => "Page slug",
+										id => "slug",
+										type => "text",
+										sort => 6
+									],
+									7 => [
+										name => "Page keywords",
+										id => "page_keywords",
+										type => "textarea",
+										sort => 7
+									]
+								]
+							],
+							2 => [
+								name => "Pages",
+								slug => "pages",
+								fields => [
+									1 => [
+										name => "Title",
+										id => "title",
+										type => "text",
+										sort => 1
+									],
+									2 => [
+										name => "Status",
+										id => "status",
+										type => "select",
+										sort => 2,
+										values => [
+											draft => "draft",
+											published => "published"
+										],
+										default => "draft"
+									],
+									3 => [
+										name => "Content",
+										id => "content",
+										type => "html",
+										sort => 3
+									],
+									4 => [
+										name => "Page slug",
+										id => "slug",
+										type => "text",
+										sort => 4
+									],
+									5 => [
+										name => "Page title",
+										id => "page_title",
+										type => "text",
+										sort => 5
+									],
+									6 => [
+										name => "Page description",
+										id => "page_description",
+										type => "textarea",
+										sort => 6
+									],
+									7 => [
+										name => "Page keywords",
+										id => "page_keywords",
+										type => "textarea",
+										sort => 7
+									]
+								]
+							],
+							3 => [
+								name => "Blocks",
+								slug => "blocks",
+								fields => [
+									1 => [
+										name => "Name",
+										id => "name",
+										type => "text",
+										sort => 1
+									],
+									2 => [
+										name => "Value",
+										id => "value",
+										type => "textarea",
+										sort => 2
+									],
+									3 => [
+										name => "Image",
+										id => "image",
+										type => "image",
+										sort => 3
+									],
+									4 => [
+										name => "Slug",
+										id => "slug",
+										type => "text",
+										placeholder => "i.e. banner-content"
+									]
+								]
+							],
+							4 => [
+								name => "Subscribers",
+								slug => "subscribers",
+								fields => [
+									1 => [
+										name => "Name",
+										id => "name",
+										type => "text",
+										sort => 1,
+										placeholder => "user@example.com"
+									],
+									2 => [
+										name => "Source",
+										id => "description",
+										type => "text",
+										sort => 2
+									]
+								]
+							]
+						]}
+						{if !get("/channels")}
+							{foreach $channels as $channel}
+								{put $channel in "/channels/{$channel.slug}"}
+							{/foreach}
+						{/if}
+						
+						{* entries *}
+						{$entries = [
+							1 => [
+								channel_id => 3,
+								name => "Header Logo",
+								slug => "header-logo",
+								value => "Alpha"
+							],
+							2 => [
+								channel_id => 3,
+								name => "About Summary",
+								slug => "about-summary",
+								value => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed eleifend malesuada diam, eget hendrerit velit porta eget. Duis tincidunt egestas nunc eget consectetur. Nunc condimentum, libero ut adipiscing congue, lacus nunc rutrum libero, mattis vulputate tellus ipsum quis augue. Suspendisse ultrices turpis lectus, eu euismod massa. Aenean id nibh orci, suscipit elementum ipsum. Praesent tristique tempor semper. Fusce at nulla eu arcu malesuada facilisis."
+							],
+							3 => [
+								channel_id => 3,
+								name => "Contact E-mail",
+								slug => "contact-email",
+								value => "support@yourstore.com"
+							],
+							4 => [
+								channel_id => 3,
+								name => "Contact Phone",
+								slug => "contact-phone",
+								value => "1-800-555-5555"
+							],
+							5 => [
+								channel_id => 1,
+								title => "Second Post, With A Slightly Longer Title",
+								slug => "second-post-with-a-slightly-longer-title",
+								status => "published",
+								content => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed eleifend malesuada diam, eget hendrerit velit porta eget. Duis tincidunt egestas nunc eget consectetur. Nunc condimentum, libero ut adipiscing congue, lacus nunc rutrum libero, mattis vulputate tellus ipsum quis augue. Suspendisse ultrices turpis lectus, eu euismod massa. Aenean id nibh orci, suscipit elementum ipsum. Praesent tristique tempor semper. Fusce at nulla eu arcu malesuada facilisis. Nam risus quam, aliquam consequat euismod non, dapibus vitae nisl. Nullam id egestas enim. Donec vel augue massa, quis convallis urna. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam erat volutpat. Donec scelerisque auctor metus, et ornare felis luctus eu. Maecenas magna risus, pharetra vel porta eu, pellentesque nec quam.
+
+<!--MORE-->
+
+Aliquam eu ipsum non enim pharetra ullamcorper. Sed sit amet risus nisl, et pharetra mauris. Pellentesque ut ligula pretium risus euismod tincidunt nec molestie sapien. Aliquam mauris ipsum, ultrices dignissim congue vel, aliquet ut felis. Ut placerat justo lectus, eget hendrerit massa. Integer ac lorem arcu, vel vestibulum orci. Integer nec eros eu diam rutrum lacinia. Morbi diam velit, aliquam ut placerat bibendum, volutpat nec nisl. In hendrerit iaculis nisl, eu molestie sem feugiat quis. Suspendisse tincidunt rhoncus malesuada. Praesent vel tellus odio. Praesent nec vulputate felis. Mauris auctor, nulla vel lacinia accumsan, turpis nisl adipiscing eros, non luctus enim nunc et velit. Sed rutrum, ante in viverra pretium, nisi est cursus ipsum, a euismod nisl nibh vitae nulla. Phasellus in justo turpis, et laoreet turpis.
+
+Curabitur feugiat metus et dui scelerisque pellentesque. Cras sit amet elit nulla, eget venenatis turpis. Suspendisse tempus rutrum ultrices. Praesent consequat aliquam elit nec feugiat. Sed lacus nulla, ultricies ac sollicitudin sit amet, laoreet in risus. Integer luctus faucibus massa, volutpat luctus dolor elementum vel. Maecenas aliquet rutrum rutrum. Nunc imperdiet nulla sed augue imperdiet at porta tortor aliquet. Maecenas mollis, diam ac rhoncus dictum, arcu nibh elementum purus, in vestibulum purus est vel magna. Nulla aliquam ornare accumsan. Suspendisse aliquet risus tortor. Aliquam sodales magna a felis hendrerit condimentum. Curabitur leo ligula, ornare porta mollis vel, lacinia eget dolor. Proin eget tortor non sem suscipit tincidunt.
+
+Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec sodales commodo pharetra. Aenean cursus consectetur lorem, in fermentum lacus rhoncus nec. Integer a est quam. Pellentesque nisi metus, euismod vel posuere id, vulputate ac arcu. Vivamus eget massa nec erat gravida dapibus. Praesent vitae neque erat, quis hendrerit orci. Ut in sem ac risus porttitor placerat. Mauris quis nisi ipsum. Nam vitae est leo, eu commodo tellus. Sed molestie neque vitae turpis adipiscing ac vestibulum tortor viverra. Pellentesque sed lacus felis.
+
+Aliquam erat volutpat. Morbi eget velit odio, vel aliquam tellus. Cras sem arcu, faucibus nec rhoncus vel, consequat at augue. Integer aliquet magna eu dui hendrerit et egestas quam aliquam. Sed sollicitudin vestibulum turpis eget fringilla. Nam elementum cursus leo, eu molestie odio luctus id. Curabitur rhoncus scelerisque posuere. In hac habitasse platea dictumst. Nulla facilisi. Fusce ullamcorper fringilla interdum. Proin non lorem et justo adipiscing eleifend. Sed semper, justo malesuada congue viverra, turpis lacus tempus sem, sit amet bibendum mauris justo non ante. Praesent quis lectus sed massa convallis lobortis nec in ante. Nulla tincidunt, lorem quis congue tincidunt, diam diam fermentum augue, vel fermentum mi lacus sed lorem. Maecenas volutpat augue ac enim congue consectetur."
+							],
+							6 => [
+								channel_id => 1,
+								title => "First Post",
+								slug => "first-post",
+								status => "published",
+								content => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed eleifend malesuada diam, eget hendrerit velit porta eget. Duis tincidunt egestas nunc eget consectetur. Nunc condimentum, libero ut adipiscing congue, lacus nunc rutrum libero, mattis vulputate tellus ipsum quis augue. Suspendisse ultrices turpis lectus, eu euismod massa. Aenean id nibh orci, suscipit elementum ipsum. Praesent tristique tempor semper. Fusce at nulla eu arcu malesuada facilisis. Nam risus quam, aliquam consequat euismod non, dapibus vitae nisl. Nullam id egestas enim. Donec vel augue massa, quis convallis urna. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam erat volutpat. Donec scelerisque auctor metus, et ornare felis luctus eu. Maecenas magna risus, pharetra vel porta eu, pellentesque nec quam.
+
+<!--MORE-->
+
+Aliquam eu ipsum non enim pharetra ullamcorper. Sed sit amet risus nisl, et pharetra mauris. Pellentesque ut ligula pretium risus euismod tincidunt nec molestie sapien. Aliquam mauris ipsum, ultrices dignissim congue vel, aliquet ut felis. Ut placerat justo lectus, eget hendrerit massa. Integer ac lorem arcu, vel vestibulum orci. Integer nec eros eu diam rutrum lacinia. Morbi diam velit, aliquam ut placerat bibendum, volutpat nec nisl. In hendrerit iaculis nisl, eu molestie sem feugiat quis. Suspendisse tincidunt rhoncus malesuada. Praesent vel tellus odio. Praesent nec vulputate felis. Mauris auctor, nulla vel lacinia accumsan, turpis nisl adipiscing eros, non luctus enim nunc et velit. Sed rutrum, ante in viverra pretium, nisi est cursus ipsum, a euismod nisl nibh vitae nulla. Phasellus in justo turpis, et laoreet turpis.
+
+Curabitur feugiat metus et dui scelerisque pellentesque. Cras sit amet elit nulla, eget venenatis turpis. Suspendisse tempus rutrum ultrices. Praesent consequat aliquam elit nec feugiat. Sed lacus nulla, ultricies ac sollicitudin sit amet, laoreet in risus. Integer luctus faucibus massa, volutpat luctus dolor elementum vel. Maecenas aliquet rutrum rutrum. Nunc imperdiet nulla sed augue imperdiet at porta tortor aliquet. Maecenas mollis, diam ac rhoncus dictum, arcu nibh elementum purus, in vestibulum purus est vel magna. Nulla aliquam ornare accumsan. Suspendisse aliquet risus tortor. Aliquam sodales magna a felis hendrerit condimentum. Curabitur leo ligula, ornare porta mollis vel, lacinia eget dolor. Proin eget tortor non sem suscipit tincidunt.
+
+Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec sodales commodo pharetra. Aenean cursus consectetur lorem, in fermentum lacus rhoncus nec. Integer a est quam. Pellentesque nisi metus, euismod vel posuere id, vulputate ac arcu. Vivamus eget massa nec erat gravida dapibus. Praesent vitae neque erat, quis hendrerit orci. Ut in sem ac risus porttitor placerat. Mauris quis nisi ipsum. Nam vitae est leo, eu commodo tellus. Sed molestie neque vitae turpis adipiscing ac vestibulum tortor viverra. Pellentesque sed lacus felis.
+
+Aliquam erat volutpat. Morbi eget velit odio, vel aliquam tellus. Cras sem arcu, faucibus nec rhoncus vel, consequat at augue. Integer aliquet magna eu dui hendrerit et egestas quam aliquam. Sed sollicitudin vestibulum turpis eget fringilla. Nam elementum cursus leo, eu molestie odio luctus id. Curabitur rhoncus scelerisque posuere. In hac habitasse platea dictumst. Nulla facilisi. Fusce ullamcorper fringilla interdum. Proin non lorem et justo adipiscing eleifend. Sed semper, justo malesuada congue viverra, turpis lacus tempus sem, sit amet bibendum mauris justo non ante. Praesent quis lectus sed massa convallis lobortis nec in ante. Nulla tincidunt, lorem quis congue tincidunt, diam diam fermentum augue, vel fermentum mi lacus sed lorem. Maecenas volutpat augue ac enim congue consectetur."
+							],
+							7 => [
+								channel_id => 2,
+								title => "About Us",
+								slug => "about",
+								status => "published",
+								content => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed eleifend malesuada diam, eget hendrerit velit porta eget. Duis tincidunt egestas nunc eget consectetur. Nunc condimentum, libero ut adipiscing congue, lacus nunc rutrum libero, mattis vulputate tellus ipsum quis augue. Suspendisse ultrices turpis lectus, eu euismod massa. Aenean id nibh orci, suscipit elementum ipsum. Praesent tristique tempor semper. Fusce at nulla eu arcu malesuada facilisis.
+
+Nam risus quam, aliquam consequat euismod non, dapibus vitae nisl. Nullam id egestas enim. Donec vel augue massa, quis convallis urna. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam erat volutpat. Donec scelerisque auctor metus, et ornare felis luctus eu. Maecenas magna risus, pharetra vel porta eu, pellentesque nec quam.
+
+Aliquam eu ipsum non enim pharetra ullamcorper. Sed sit amet risus nisl, et pharetra mauris. Pellentesque ut ligula pretium risus euismod tincidunt nec molestie sapien. Aliquam mauris ipsum, ultrices dignissim congue vel, aliquet ut felis. Ut placerat justo lectus, eget hendrerit massa. Integer ac lorem arcu, vel vestibulum orci. Integer nec eros eu diam rutrum lacinia. Morbi diam velit, aliquam ut placerat bibendum, volutpat nec nisl. In hendrerit iaculis nisl, eu molestie sem feugiat quis. Suspendisse tincidunt rhoncus malesuada. Praesent vel tellus odio. Praesent nec vulputate felis. Mauris auctor, nulla vel lacinia accumsan, turpis nisl adipiscing eros, non luctus enim nunc et velit. Sed rutrum, ante in viverra pretium, nisi est cursus ipsum, a euismod nisl nibh vitae nulla. Phasellus in justo turpis, et laoreet turpis.
+
+Curabitur feugiat metus et dui scelerisque pellentesque. Cras sit amet elit nulla, eget venenatis turpis. Suspendisse tempus rutrum ultrices. Praesent consequat aliquam elit nec feugiat. Sed lacus nulla, ultricies ac sollicitudin sit amet, laoreet in risus. Integer luctus faucibus massa, volutpat luctus dolor elementum vel. Maecenas aliquet rutrum rutrum. Nunc imperdiet nulla sed augue imperdiet at porta tortor aliquet. Maecenas mollis, diam ac rhoncus dictum, arcu nibh elementum purus, in vestibulum purus est vel magna. Nulla aliquam ornare accumsan. Suspendisse aliquet risus tortor. Aliquam sodales magna a felis hendrerit condimentum. Curabitur leo ligula, ornare porta mollis vel, lacinia eget dolor. Proin eget tortor non sem suscipit tincidunt.
+
+Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec sodales commodo pharetra. Aenean cursus consectetur lorem, in fermentum lacus rhoncus nec. Integer a est quam. Pellentesque nisi metus, euismod vel posuere id, vulputate ac arcu. Vivamus eget massa nec erat gravida dapibus. Praesent vitae neque erat, quis hendrerit orci. Ut in sem ac risus porttitor placerat. Mauris quis nisi ipsum. Nam vitae est leo, eu commodo tellus. Sed molestie neque vitae turpis adipiscing ac vestibulum tortor viverra. Pellentesque sed lacus felis.
+
+Aliquam erat volutpat. Morbi eget velit odio, vel aliquam tellus. Cras sem arcu, faucibus nec rhoncus vel, consequat at augue. Integer aliquet magna eu dui hendrerit et egestas quam aliquam. Sed sollicitudin vestibulum turpis eget fringilla. Nam elementum cursus leo, eu molestie odio luctus id. Curabitur rhoncus scelerisque posuere. In hac habitasse platea dictumst. Nulla facilisi. Fusce ullamcorper fringilla interdum. Proin non lorem et justo adipiscing eleifend. Sed semper, justo malesuada congue viverra, turpis lacus tempus sem, sit amet bibendum mauris justo non ante. Praesent quis lectus sed massa convallis lobortis nec in ante. Nulla tincidunt, lorem quis congue tincidunt, diam diam fermentum augue, vel fermentum mi lacus sed lorem. Maecenas volutpat augue ac enim congue consectetur."
+							],
+							8 => [
+								channel_id => 2,
+								title => "Terms & Conditions",
+								slug => "terms",
+								status => "published",
+								content => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed eleifend malesuada diam, eget hendrerit velit porta eget. Duis tincidunt egestas nunc eget consectetur. Nunc condimentum, libero ut adipiscing congue, lacus nunc rutrum libero, mattis vulputate tellus ipsum quis augue. Suspendisse ultrices turpis lectus, eu euismod massa. Aenean id nibh orci, suscipit elementum ipsum. Praesent tristique tempor semper. Fusce at nulla eu arcu malesuada facilisis.
+
+Nam risus quam, aliquam consequat euismod non, dapibus vitae nisl. Nullam id egestas enim. Donec vel augue massa, quis convallis urna. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam erat volutpat. Donec scelerisque auctor metus, et ornare felis luctus eu. Maecenas magna risus, pharetra vel porta eu, pellentesque nec quam.
+
+Aliquam eu ipsum non enim pharetra ullamcorper. Sed sit amet risus nisl, et pharetra mauris. Pellentesque ut ligula pretium risus euismod tincidunt nec molestie sapien. Aliquam mauris ipsum, ultrices dignissim congue vel, aliquet ut felis. Ut placerat justo lectus, eget hendrerit massa. Integer ac lorem arcu, vel vestibulum orci. Integer nec eros eu diam rutrum lacinia. Morbi diam velit, aliquam ut placerat bibendum, volutpat nec nisl. In hendrerit iaculis nisl, eu molestie sem feugiat quis. Suspendisse tincidunt rhoncus malesuada. Praesent vel tellus odio. Praesent nec vulputate felis. Mauris auctor, nulla vel lacinia accumsan, turpis nisl adipiscing eros, non luctus enim nunc et velit. Sed rutrum, ante in viverra pretium, nisi est cursus ipsum, a euismod nisl nibh vitae nulla. Phasellus in justo turpis, et laoreet turpis.
+
+Curabitur feugiat metus et dui scelerisque pellentesque. Cras sit amet elit nulla, eget venenatis turpis. Suspendisse tempus rutrum ultrices. Praesent consequat aliquam elit nec feugiat. Sed lacus nulla, ultricies ac sollicitudin sit amet, laoreet in risus. Integer luctus faucibus massa, volutpat luctus dolor elementum vel. Maecenas aliquet rutrum rutrum. Nunc imperdiet nulla sed augue imperdiet at porta tortor aliquet. Maecenas mollis, diam ac rhoncus dictum, arcu nibh elementum purus, in vestibulum purus est vel magna. Nulla aliquam ornare accumsan. Suspendisse aliquet risus tortor. Aliquam sodales magna a felis hendrerit condimentum. Curabitur leo ligula, ornare porta mollis vel, lacinia eget dolor. Proin eget tortor non sem suscipit tincidunt.
+
+Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec sodales commodo pharetra. Aenean cursus consectetur lorem, in fermentum lacus rhoncus nec. Integer a est quam. Pellentesque nisi metus, euismod vel posuere id, vulputate ac arcu. Vivamus eget massa nec erat gravida dapibus. Praesent vitae neque erat, quis hendrerit orci. Ut in sem ac risus porttitor placerat. Mauris quis nisi ipsum. Nam vitae est leo, eu commodo tellus. Sed molestie neque vitae turpis adipiscing ac vestibulum tortor viverra. Pellentesque sed lacus felis.
+
+Aliquam erat volutpat. Morbi eget velit odio, vel aliquam tellus. Cras sem arcu, faucibus nec rhoncus vel, consequat at augue. Integer aliquet magna eu dui hendrerit et egestas quam aliquam. Sed sollicitudin vestibulum turpis eget fringilla. Nam elementum cursus leo, eu molestie odio luctus id. Curabitur rhoncus scelerisque posuere. In hac habitasse platea dictumst. Nulla facilisi. Fusce ullamcorper fringilla interdum. Proin non lorem et justo adipiscing eleifend. Sed semper, justo malesuada congue viverra, turpis lacus tempus sem, sit amet bibendum mauris justo non ante. Praesent quis lectus sed massa convallis lobortis nec in ante. Nulla tincidunt, lorem quis congue tincidunt, diam diam fermentum augue, vel fermentum mi lacus sed lorem. Maecenas volutpat augue ac enim congue consectetur."
+							],
+							9 => [
+								channel_id => 2,
+								title => "Privacy Policy",
+								slug => "privacy",
+								status => "published",
+								content => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed eleifend malesuada diam, eget hendrerit velit porta eget. Duis tincidunt egestas nunc eget consectetur. Nunc condimentum, libero ut adipiscing congue, lacus nunc rutrum libero, mattis vulputate tellus ipsum quis augue. Suspendisse ultrices turpis lectus, eu euismod massa. Aenean id nibh orci, suscipit elementum ipsum. Praesent tristique tempor semper. Fusce at nulla eu arcu malesuada facilisis.
+
+Nam risus quam, aliquam consequat euismod non, dapibus vitae nisl. Nullam id egestas enim. Donec vel augue massa, quis convallis urna. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Aliquam erat volutpat. Donec scelerisque auctor metus, et ornare felis luctus eu. Maecenas magna risus, pharetra vel porta eu, pellentesque nec quam.
+
+Aliquam eu ipsum non enim pharetra ullamcorper. Sed sit amet risus nisl, et pharetra mauris. Pellentesque ut ligula pretium risus euismod tincidunt nec molestie sapien. Aliquam mauris ipsum, ultrices dignissim congue vel, aliquet ut felis. Ut placerat justo lectus, eget hendrerit massa. Integer ac lorem arcu, vel vestibulum orci. Integer nec eros eu diam rutrum lacinia. Morbi diam velit, aliquam ut placerat bibendum, volutpat nec nisl. In hendrerit iaculis nisl, eu molestie sem feugiat quis. Suspendisse tincidunt rhoncus malesuada. Praesent vel tellus odio. Praesent nec vulputate felis. Mauris auctor, nulla vel lacinia accumsan, turpis nisl adipiscing eros, non luctus enim nunc et velit. Sed rutrum, ante in viverra pretium, nisi est cursus ipsum, a euismod nisl nibh vitae nulla. Phasellus in justo turpis, et laoreet turpis.
+
+Curabitur feugiat metus et dui scelerisque pellentesque. Cras sit amet elit nulla, eget venenatis turpis. Suspendisse tempus rutrum ultrices. Praesent consequat aliquam elit nec feugiat. Sed lacus nulla, ultricies ac sollicitudin sit amet, laoreet in risus. Integer luctus faucibus massa, volutpat luctus dolor elementum vel. Maecenas aliquet rutrum rutrum. Nunc imperdiet nulla sed augue imperdiet at porta tortor aliquet. Maecenas mollis, diam ac rhoncus dictum, arcu nibh elementum purus, in vestibulum purus est vel magna. Nulla aliquam ornare accumsan. Suspendisse aliquet risus tortor. Aliquam sodales magna a felis hendrerit condimentum. Curabitur leo ligula, ornare porta mollis vel, lacinia eget dolor. Proin eget tortor non sem suscipit tincidunt.
+
+Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec sodales commodo pharetra. Aenean cursus consectetur lorem, in fermentum lacus rhoncus nec. Integer a est quam. Pellentesque nisi metus, euismod vel posuere id, vulputate ac arcu. Vivamus eget massa nec erat gravida dapibus. Praesent vitae neque erat, quis hendrerit orci. Ut in sem ac risus porttitor placerat. Mauris quis nisi ipsum. Nam vitae est leo, eu commodo tellus. Sed molestie neque vitae turpis adipiscing ac vestibulum tortor viverra. Pellentesque sed lacus felis.
+
+Aliquam erat volutpat. Morbi eget velit odio, vel aliquam tellus. Cras sem arcu, faucibus nec rhoncus vel, consequat at augue. Integer aliquet magna eu dui hendrerit et egestas quam aliquam. Sed sollicitudin vestibulum turpis eget fringilla. Nam elementum cursus leo, eu molestie odio luctus id. Curabitur rhoncus scelerisque posuere. In hac habitasse platea dictumst. Nulla facilisi. Fusce ullamcorper fringilla interdum. Proin non lorem et justo adipiscing eleifend. Sed semper, justo malesuada congue viverra, turpis lacus tempus sem, sit amet bibendum mauris justo non ante. Praesent quis lectus sed massa convallis lobortis nec in ante. Nulla tincidunt, lorem quis congue tincidunt, diam diam fermentum augue, vel fermentum mi lacus sed lorem. Maecenas volutpat augue ac enim congue consectetur."
+							]
+						]}
+						{if !get("/entries")}
+							{foreach $entries as $entry}
+								{put $entry in "/entries/{$entry.slug}"}
+							{/foreach}
+						{/if}
+						
+						{* categories *}
+						{$categories = [
+							1 => [
+								name => "Women's",
+								slug => "womens",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							2 => [
+								name => "Men's",
+								slug => "mens",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							3 => [
+								name => "Kid's",
+								slug => "kids",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							4 => [
+								name => "Brands",
+								slug => "brands",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							5 => [
+								name => "Accessories",
+								slug => "accessories",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							6 => [
+								parent_id => 1,
+								name => "Jackets",
+								slug => "womens-jackets",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							7 => [
+								parent_id => 1,
+								name => "Pants",
+								slug => "womens-pants",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							8 => [
+								parent_id => 1,
+								name => "Footwear",
+								slug => "womens-footwear",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							9 => [
+								parent_id => 2,
+								name => "Jackets",
+								slug => "mens-jackets",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							10 => [
+								parent_id => 2,
+								name => "Pants",
+								slug => "mens-pants",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							11 => [
+								parent_id => 2,
+								name => "Footwear",
+								slug => "mens-footwear",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							12 => [
+								parent_id => 3,
+								name => "Girls' Jackets",
+								slug => "girls-jackets",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							13 => [
+								parent_id => 3,
+								name => "Boys' Jackets",
+								slug => "boys-jackets",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							14 => [
+								parent_id => 4,
+								name => "Burton",
+								slug => "brands-burton",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							15 => [
+								parent_id => 4,
+								name => "The North Face",
+								slug => "brands-the-north-face",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							16 => [
+								parent_id => 4,
+								name => "Arc'Teryx",
+								slug => "brands-arcteryx",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							17 => [
+								parent_id => 4,
+								name => "Columbia",
+								slug => "brands-columbia",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							18 => [
+								parent_id => 4,
+								name => "Electric",
+								slug => "brands-electric",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							19 => [
+								parent_id => 5,
+								name => "Gloves",
+								slug => "accessories-gloves",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							20 => [
+								parent_id => 5,
+								name => "Hats & Beanies",
+								slug => "accessories-hats-beanies",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							],
+							21 => [
+								parent_id => 5,
+								name => "Goggles",
+								slug => "accessories-goggles",
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc."
+							]
+						]}
+						{if !get("/categories")}
+							{foreach $categories as $category}
+								{put $category in "/categories/{$category.slug}"}
+							{/foreach}
+						{/if}
+						
+						{* products *}
+						{$products = [
+							[
+								name => "The North Face Ava Triclimate Jacket - Women's",
+								slug => "the-north-face-ava-triclimate-jacket-womens",
+								primary_category_id => 6,
+								categories => [6, 15],
+								sku => "TNF7814",
+								price => 229.95,
+								weight => 1,
+								variants => [
+									1 => [
+										name => "Blue, Small"
+									],
+									2 => [
+										name => "Black, Small"
+									],
+									3 => [
+										name => "Pink, Small"
+									]
+								],
+								is_active => true,
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc. Mauris egestas consequat dolor at vehicula. Pellentesque at convallis sem. Maecenas dolor mi, pharetra a iaculis ut, laoreet imperdiet purus. Nunc imperdiet ultrices turpis vitae ultrices. Fusce pellentesque tempus arcu a malesuada. In hac habitasse platea dictumst."
+							],
+							[
+								name => "Burton AK 2L Summit Pant - Women's",
+								slug => "burton-ak-2l-summit-pant-womens",
+								primary_category_id => 7,
+								categories => [7, 14],
+								sku => "BUR5019",
+								price => 339.95,
+								weight => 1,
+								variants => [
+									1 => [
+										name => "Blue, Small"
+									],
+									2 => [
+										name => "Grey, Small"
+									],
+									3 => [
+										name => "Black, Small"
+									]
+								],
+								is_active => true,
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc. Mauris egestas consequat dolor at vehicula. Pellentesque at convallis sem. Maecenas dolor mi, pharetra a iaculis ut, laoreet imperdiet purus. Nunc imperdiet ultrices turpis vitae ultrices. Fusce pellentesque tempus arcu a malesuada. In hac habitasse platea dictumst."
+							],
+							[
+								name => "The North Face McMurdo II Boot - Women's",
+								slug => "the-north-face-mc-murdo-ii-boot-womens",
+								primary_category_id => 8,
+								categories => [8, 15],
+								sku => "TNF6706",
+								price => 135.95,
+								weight => 1,
+								variants => [
+									1 => [
+										name => "Brown, 7"
+									],
+									2 => [
+										name => "Black, 7"
+									]
+								],
+								is_active => true,
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc. Mauris egestas consequat dolor at vehicula. Pellentesque at convallis sem. Maecenas dolor mi, pharetra a iaculis ut, laoreet imperdiet purus. Nunc imperdiet ultrices turpis vitae ultrices. Fusce pellentesque tempus arcu a malesuada. In hac habitasse platea dictumst."
+							],
+							[
+								name => "Arc'teryx Crossbow Jacket - Men's",
+								slug => "arcteryx-crossbow-jacket-mens",
+								primary_category_id => 9,
+								categories => [9, 16],
+								sku => "ARC1021",
+								price => 559.95,
+								weight => 1,
+								variants => [
+									1 => [
+										name => "Orange, Small"
+									],
+									2 => [
+										name => "Brown, Small"
+									],
+									3 => [
+										name => "Blue, Small"
+									]
+								],
+								is_active => true,
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc. Mauris egestas consequat dolor at vehicula. Pellentesque at convallis sem. Maecenas dolor mi, pharetra a iaculis ut, laoreet imperdiet purus. Nunc imperdiet ultrices turpis vitae ultrices. Fusce pellentesque tempus arcu a malesuada. In hac habitasse platea dictumst."
+							],
+							[
+								name => "Columbia Bugaboot Plus XTM Boot - Men's",
+								slug => "columbia-bugaboot-plus-xtm-boot-mens",
+								primary_category_id => 11,
+								categories => [11, 17],
+								sku => "COL3515",
+								price => 137.95,
+								weight => 1,
+								variants => [
+									1 => [
+										name => "Brown, 9"
+									],
+									2 => [
+										name => "Black, 9"
+									]
+								],
+								is_active => true,
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc. Mauris egestas consequat dolor at vehicula. Pellentesque at convallis sem. Maecenas dolor mi, pharetra a iaculis ut, laoreet imperdiet purus. Nunc imperdiet ultrices turpis vitae ultrices. Fusce pellentesque tempus arcu a malesuada. In hac habitasse platea dictumst."
+							],
+							[
+								name => "Burton AK Freebird Bib Pant - Men's",
+								slug => "burton-ak-freebird-bib-pant-mens",
+								primary_category_id => 10,
+								categories => [10, 14],
+								sku => "BUR4929",
+								price => 489.95,
+								weight => 1,
+								variants => [
+									1 => [
+										name => "Beige, Small"
+									],
+									2 => [
+										name => "Black, Small"
+									]
+								],
+								is_active => true,
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc. Mauris egestas consequat dolor at vehicula. Pellentesque at convallis sem. Maecenas dolor mi, pharetra a iaculis ut, laoreet imperdiet purus. Nunc imperdiet ultrices turpis vitae ultrices. Fusce pellentesque tempus arcu a malesuada. In hac habitasse platea dictumst."
+							],
+							[
+								name => "The North Face Metropolis Down Parka - Girls'",
+								slug => "the-north-face-metropolis-down-parka-girls",
+								primary_category_id => 12,
+								categories => [12, 15],
+								sku => "TNF6632",
+								price => 235.95,
+								weight => 1,
+								variants => [
+									1 => [
+										name => "Dark Grey, Small"
+									],
+									2 => [
+										name => "White, Small"
+									],
+									3 => [
+										name => "Black, Small"
+									]
+								],
+								is_active => true,
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc. Mauris egestas consequat dolor at vehicula. Pellentesque at convallis sem. Maecenas dolor mi, pharetra a iaculis ut, laoreet imperdiet purus. Nunc imperdiet ultrices turpis vitae ultrices. Fusce pellentesque tempus arcu a malesuada. In hac habitasse platea dictumst."
+							],
+							[
+								name => "Columbia Cypress Brook II Jacket - Boys'",
+								slug => "columbia-cypress-brook-ii-jacket-boys",
+								primary_category_id => 13,
+								categories => [13, 17],
+								sku => "COL3657",
+								price => 42.95,
+								weight => 1,
+								variants => [
+									1 => [
+										name => "Blue Dark Blue, Small"
+									],
+									2 => [
+										name => "Blue Yellow, Small"
+									],
+									3 => [
+										name => "Bright Orange Dark Blue, Small"
+									]
+								],
+								is_active => true,
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc. Mauris egestas consequat dolor at vehicula. Pellentesque at convallis sem. Maecenas dolor mi, pharetra a iaculis ut, laoreet imperdiet purus. Nunc imperdiet ultrices turpis vitae ultrices. Fusce pellentesque tempus arcu a malesuada. In hac habitasse platea dictumst."
+							],
+							[
+								name => "The North Face Denali Glove - Men's'",
+								slug => "the-north-face-denali-glove-mens",
+								primary_category_id => 19,
+								categories => [19, 15],
+								sku => "TNF6426",
+								price => 39.95,
+								weight => 1,
+								variants => [
+									1 => [
+										name => "Grey"
+									],
+									2 => [
+										name => "Black"
+									],
+									3 => [
+										name => "Dark Blue"
+									]
+								],
+								is_active => true,
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc. Mauris egestas consequat dolor at vehicula. Pellentesque at convallis sem. Maecenas dolor mi, pharetra a iaculis ut, laoreet imperdiet purus. Nunc imperdiet ultrices turpis vitae ultrices. Fusce pellentesque tempus arcu a malesuada. In hac habitasse platea dictumst."
+							],
+							[
+								name => "Arc'teryx Bird Head Beanie",
+								slug => "arcteryx-bird-head-beanie",
+								primary_category_id => 20,
+								categories => [20, 16],
+								sku => "ARC0547",
+								price => 44.95,
+								weight => 1,
+								variants => [
+									1 => [
+										name => "Grey"
+									],
+									2 => [
+										name => "Black"
+									],
+									3 => [
+										name => "Purple"
+									]
+								],
+								is_active => true,
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc. Mauris egestas consequat dolor at vehicula. Pellentesque at convallis sem. Maecenas dolor mi, pharetra a iaculis ut, laoreet imperdiet purus. Nunc imperdiet ultrices turpis vitae ultrices. Fusce pellentesque tempus arcu a malesuada. In hac habitasse platea dictumst."
+							],
+							[
+								name => "Electric EG2 Goggle",
+								slug => "electric-eg2-goggle",
+								primary_category_id => 21,
+								categories => [21, 18],
+								sku => "ELC0649",
+								price => 129.95,
+								weight => 1,
+								variants => [
+									1 => [
+										name => "Orange"
+									],
+									2 => [
+										name => "Grey"
+									],
+									3 => [
+										name => "Black"
+									]
+								],
+								is_active => true,
+								description => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sed mauris enim. Fusce facilisis est quam, scelerisque fringilla nunc. Mauris egestas consequat dolor at vehicula. Pellentesque at convallis sem. Maecenas dolor mi, pharetra a iaculis ut, laoreet imperdiet purus. Nunc imperdiet ultrices turpis vitae ultrices. Fusce pellentesque tempus arcu a malesuada. In hac habitasse platea dictumst."
+							]
+						]}
+						{if !get("/products")}
+							{foreach $products as $product}
+								{put $product in "/products/{$product.slug}"}
+							{/foreach}
+						{/if}
+
+						{* discounts *}
+						{$discounts = [
+							[
+								name => "50% Off Shipping",
+								description => "50% Off Shipping (Ground Only)",
+								apply_to => "code",
+								conditions => [
+									is_active => true
+								],
+								codes => [
+									"HALFSHIP"
+								],
+								rules => [
+									1 => [
+										type => "shipping",
+										method => "FedEx Ground",
+										value => "50%"
+									]
+								]
+								
+							],
+							[
+								name => "10% Off Everything",
+								description => "Save 10% on all orders before 2015",
+								apply_to => "code",
+								conditions => [
+									is_active => true, date_expires => "2015-01-01"
+								],
+								codes => [
+									"SAVE10"
+								],
+								rules => [
+									1 => [
+										value => "10%"
+									]
+								]
+								
+							]
+						]}
+						{if !get("/discounts")}
+							{foreach $discounts as $discount}
+								{post $discount in "/discounts"}
+							{/foreach}
+						{/if}
+						
+						{put [done => "yes"] in "/entries/--setup"}
+						{redirect "/"}
+
+					{elseif $params.setup == no}
+					
+						{put [done => "no"] in "/entries/--setup"}
+						{redirect "/"}
+					{/if}
+					
+				</div>
+			</div>
+		</div>
+		<div id="footer">
+			<div class="footer-bottom">
+				<div class="container">
+					<small class="footer-attrib">
+						Powered by <a href="http://getfwd.com">Forward Commerce</a>
+					</small>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+</body>
+</html>

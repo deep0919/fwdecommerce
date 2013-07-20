@@ -1,0 +1,13 @@
+{args $id}
+
+{get $channel from "/channels/$id"}
+
+<div class="info-header">
+	<a class="btn view-link" href="/entries/new/{$id}"><i class="icon-plus"></i> New entry</a>
+	<a class="btn view-link" href="/channels/entry/{$id}"><i class="icon-pencil"></i> Edit {$channel.name|lower}</a>
+</div>
+<div class="info-content">
+	<section>
+		
+	</section>
+</div>

@@ -1,0 +1,84 @@
+{extend "admin"}
+
+{render "default-entry" for="orders"}
+
+{$order = $request.entry}
+{$errors = $request.errors}
+
+{* Default method *}
+{if !$params.payment.method}
+	{if $order.account.balance > 0 && $order.account.balance >= $params.payment.amount}
+		{$params.payment.method = "credit"}
+	{else}
+		{$params.payment.method = $order.billing.method}
+	{/if}
+{/if}
+
+{* Default amount *}
+{if !$params.payment.amount && $order.payment_balance < 0}
+	{$params.payment.amount = $order.payment_balance|abs}
+{/if}
+
+{* Default reason *}
+{if !$params.payment.reason && !$order.payments}
+	{$params.payment.reason = "Order complete"}
+{/if}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Charge <small>/ Order #{$order.id}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="/orders/charge/{$order.id}/payments{if $request.related_id}/{$request.related_id}{/if}?tab=payment">
+		{render "messages"}
+		<div class="view-content">
+			{* Show payment method error *}
+			{if $errors.method}
+				<div class="alert alert-error">
+					{$errors.method}
+				</div>
+			{/if}
+			<div class="row">
+				<div class="field control-group span4">
+					<label>Method</label>
+					<select name="payment[method]">
+						{foreach get("/settings/payments") as $method => $settings}
+							{* Restrict billing method to certain account role(s)? *}
+							{if $settings.roles|is_array && (($order.account.roles|is_array && !$order.account.roles|array_intersect:$settings.roles) || !$order.account.roles|is_array && ($order.billing.method != $method))}
+								{continue}
+							{/if}
+							{* Don't show card if payment info is not attached to order *}
+							{if $method == "card" && !$order.billing.card}
+								{continue}
+							{/if}
+							{* Don't show invoice on this page *}
+							{if $method == "invoice"}
+								{continue}
+							{/if}
+							<option value="{$method}" {if $params.payment.method == $method}selected="selected"{/if}>{$settings.name|default:$method|ucfirst} {if $method == "credit"}({$order.account.balance|money}){elseif $method == "card"}({$order.billing.card.type} {$order.billing.card.last4}){/if}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>
+			<div class="row">
+				<div class="field control-group span1">
+					<label>Amount <span class="error">{if $errors.amount}!{/if}</span></label>
+					<input type="text" name="payment[amount]" value="{$params.payment.amount}" class="numeric {if !$params.payment.amount}focus{/if}" />
+				</div>
+				<div class="field control-group span3">
+					<label>Charge reason <span class="error">{$errors.reason}</span></label>
+					<input type="text" name="payment[reason]" value="{$params.payment.reason}" class="{if $params.payment.amount}focus{/if}" />
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<input type="hidden" name="payment[order_id]" value="{$order.id}" />
+			<input type="hidden" name="payment[action]" value="charge" />
+			<button type="submit" class="btn btn-primary">Submit charge</button>
+			<button type="button" class="btn view-back">Cancel</button>
+		</div>
+	</form>
+</div>
+

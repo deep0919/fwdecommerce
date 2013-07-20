@@ -1,0 +1,70 @@
+{extend "admin"}
+
+{extend "default-entry" for="orders"}
+
+{$order = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{if $order.shipping}Edit{else}Complete{/if} shipping <small>/ Order #{$order.id}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body edit" method="post" action="/orders/shipping/{$order.id}">
+		{render "messages"}
+		<div class="view-content">
+			<fieldset>
+				<div class="row">
+					{if $order.shipping_total}
+						<input type="hidden" name="order[shipping_total]" value="{$order.shipping_total}" />
+					{/if}
+					<div class="field control-group span3">
+						<label>Shipping method <span class="error">{$errors.shipping.method}</span></label>
+						{$shipping_method = $order.shipping.method}
+						<select name="order[shipping][method]" class="shipping_method">
+							{foreach "/shipments/methods"|get as $method}
+								<option {if $method.name == $shipping_method}{$selected = true}selected="selected"{/if} data-price="{$method.price}">{$method.name}</option>
+							{/foreach}
+							{if $shipping_method && !$selected}
+								<option selected="selected">{$shipping_method}</option>
+							{/if}
+						</select>
+					</div>
+				</div>
+				<div class="row">
+					<div class="field control-group span3">
+						<label>Ship to <span class="error">{$errors.shipping.name}</span></label>
+						<input type="text" name="order[shipping][name]" value="{$order.shipping.name|default:$order.account.name}" />
+					</div>
+				</div>
+				<div class="row">
+					<div class="field control-group span3">
+						<label>Shipping address <span class="error">{$errors.shipping.address}</span></label>
+						<input type="text" name="order[shipping][address]" value="{$order.shipping.address|default:$order.billing.address|default:$order.account.last_order.shipping.address}" />
+					</div>
+				</div>
+				<div class="row">
+					<div class="field control-group span2">
+						<label>Shipping city <span class="error">{$errors.shipping.city}</span></label>
+						<input type="text" name="order[shipping][city]" value="{$order.shipping.city|default:$order.billing.city|default:$order.account.last_order.shipping.city}" />
+					</div>
+					<div class="field control-group span1">
+						<label>State <span class="error">{$errors.shipping.state}</span></label>
+						<input type="text" name="order[shipping][state]" value="{$order.shipping.state|default:$order.billing.state|default:$order.account.last_order.shipping.state}" maxlength="2" />
+					</div>
+					<div class="field control-group span1">
+						<label>Zip <span class="error">{$errors.shipping.zip}</span></label>
+						<input type="text" name="order[shipping][zip]" value="{$order.shipping.zip|default:$order.billing.zip|default:$order.account.last_order.shipping.zip}" />
+					</div>
+				</div>
+			</fieldset>
+		</div>
+		<div class="view-footer actions">
+			<input type="hidden" name="order[:recalc]" value="true" />
+			<button type="submit" class="btn btn-primary">Save shipping</button>
+			<button type="button" class="btn view-back">Back</button>
+		</div>
+	</form>
+</div>

@@ -1,0 +1,32 @@
+{extend "admin"}
+
+{$query = [
+	search => $params.search,
+	where => $params.where,
+	page => $params.page
+]}
+
+{get $categories from "/categories" $query}
+
+{foreach $categories as $category}
+	<li>
+		<div class="headline">
+			<a class="list-item" href="/categories/entry/{$category.id}" id="item_categories_{$category.id}"> 
+				<span class="name">{if $category.parent}{$category.parent.name} / {/if}{$category.name}</span>
+			</a>
+		</div>
+		<small>
+			{if !$category.parent_id}
+				{pluralize "{$category.child_count} categories"}
+			{else}
+				{pluralize "{$category.product_count} products"}
+			{/if}
+			<b class="bull">&bull;</b> {$category.slug}
+			<span class="date">{$category.date_created|age_date}</span>
+		</small>
+	</li>
+{foreachelse}
+	<li class="empty">No categories found</li>
+{/foreach}
+
+{render "loadmore" with=$categories query=$query url="/categories"}

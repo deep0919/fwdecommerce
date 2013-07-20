@@ -1,0 +1,70 @@
+{extend "admin"}
+	
+{extend "default-entry" for="channels"}
+{$channel = $request.entry}
+{$errors = $request.errors}
+
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{$channel.name|default:"[no name]"} <small>/ Channel #{$channel.id}</small></h2>
+	</div>
+	<form class="view-body" method="post" action="/channels/entry/{$channel.id}">
+		<div class="view-content tabbable">
+			{render "messages"}
+			<div class="tab-content">
+				<div class="row">
+					<div class="field control-group span2">
+						<label>Channel name <span class="error">{$errors.name}</span></label>
+						<input type="text" name="channel[name]" value="{$channel.name}" />
+					</div>
+					<div class="field control-group span2">
+						<label>Channel slug <span class="error">{$errors.slug}</span></label>
+						<input type="text" name="channel[slug]" value="{$channel.slug|default:$channel.name|hyphenate}" />
+					</div>
+				</div>
+				{if $channel.fields}
+					<table class="table table-bordered table-condensed">
+						<tr>
+							<th colspan="2">Channel fields</th>
+							<th>Type</th>
+						</tr>
+						{foreach $channel.fields as $field}
+							<tr>
+								<td>#{$field@iteration}</td>
+								<td>
+									<div class="with-actions">
+										{$field.name}
+										<code class="act">
+											<a href="/channels/field/{$channel.id}/fields/{$field@key}" class="view-link">edit</a>
+										</code>
+									</div>
+								</td>
+								<td>{$field.type}</td>
+							</tr>
+						{/foreach}
+					</table>
+				{/if}
+				<button type="button" class="btn btn-success view-link" data-href="/channels/field/{$channel.id}"><i class="icon-plus-sign icon-white"></i> Add field</button>
+				<br />
+				<br />
+				
+				<div class="row">
+					<div class="field control-group span4">
+						<label>Preview (Optional, http://example.com/page/:slug/preview) <span class="error">{$errors.preview_url}</span></label>
+						<input type="text" name="channel[preview_url]" value="{$channel.preview_url}" />
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<button type="submit" class="btn btn-primary">Save channel</button>
+			<button type="button" class="btn view-cancel">Close</button>
+			{if !$channel.is_deleted}
+				<a class="trash view-link" href="/channels/entry/{$channel.id}?channel[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+			{else}
+				<a class="trash view-link undo" href="/channels/entry/{$channel.id}?channel[:restore]=true" data-post="true">Undo <i class="icon-trash"></i></a>
+			{/if}
+		</div>
+	</form>
+</div>

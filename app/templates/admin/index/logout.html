@@ -1,0 +1,6 @@
+{extend "admin"}
+
+{* Remove account ID from session *}
+{$session.account_id = null}
+
+{flash notice="You have been logged out" redirect="/login"}

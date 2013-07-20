@@ -1,0 +1,28 @@
+{* This renders a field with multiple image uploads in a set *}
+{if $type && !$imageset}
+	{$imageset = "/settings/images/{$type}"|get}
+{/if}
+<div class="field images">
+	{foreach $imageset as $name}
+		{if $displayed[$name]}
+			{continue}
+		{/if}
+		{$displayed[$name] = true}
+		<label><b>{$name}</b></label>
+		<div class="image default" data-upload="/upload/{$type|pluralize}/{$for.id}">
+			<img src="{image for=$for name=$name width=$width|default:190 height=$height|default:154 padded=$padded|default:true default=$default|default:"/images/blank.png"}?{$smarty.now}" />
+			<span><em class="name"></em></span>
+			<input type="file" class="upload" name="{$name}" />
+			<input type="hidden" class="uploaded" name="{$type|singularize}[images][{$name}]" value="" />
+		</div>
+		<br />
+	{/foreach}
+</div>
+<div class="field span2">
+	<br />
+	<label>Upload guidelines</label>
+	<ul>
+		<li>Format: JPG, PNG, or GIF</li>
+		<li>Size: &lt; 8 Megabytes</li>
+	</ul>
+</div>

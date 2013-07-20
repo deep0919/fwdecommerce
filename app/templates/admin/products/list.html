@@ -1,0 +1,15 @@
+{extend "admin"}
+
+<div class="list-container">
+	<div class="list-header well">
+		{render "search" for="products" action=$params.action actions=[
+			all => [where => []],
+			active => [icon => "icon-star", where => [is_active => "true"]],
+			inactive => [icon => "icon-star-empty", where => [is_active => "false"]],
+			discontinued => [icon => "icon-minus", where => [is_active => "discontinued"]]
+		]}
+	</div>
+	<ul class="list-results with-images">
+		{render "products/results"}
+	</ul>
+</div>

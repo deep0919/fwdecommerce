@@ -1,0 +1,148 @@
+{extend "admin"}
+
+{extend "default-entry" for="orders"}
+
+{$order = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Schedule <small>/ Order #{$order.id}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body edit" method="post" action="/orders/schedule/{$order.id}">
+		{render "messages"}
+		<div class="view-content">
+			<div class="row schedule_select">
+				<input type="hidden" name="order[schedule]" value="" />
+				<div class="field control-group span3">
+					<label><span class="error">{$errors.schedule.every}</span></label>
+					<select name="" class="schedule_type">
+						<option value="">No schedule</option>
+						<option value="date" {if $order.schedule.date || $order.date_scheduled}selected="selected"{/if}>One-time order</option>
+						<option value="every" {if $order.schedule.every}selected="selected"{/if}>Recurring order</option>
+					</select>
+				</div>
+			</div>
+			<fieldset class="schedule">
+				<div class="row schedule_date {if !$order.date_scheduled}hidden{/if}">
+					<div class="field control-group span3">
+						<h4>Schedule date</h4>
+						<input type="text" name="order[schedule][date]" value="{$order.date_scheduled|date_format}" />
+					</div>
+				</div>
+				<div class="row schedule_every  {if !$order.schedule.every}hidden{/if}">
+					<div class="field control-group span3">
+						<h4>Order schedule</h4>
+						<label><span class="error">{$errors.schedule.every}</span></label>
+						<select name="order[schedule][every]" class="schedule_every">
+							<option value="month" {if $order.schedule.every == "month"}selected="selected"{/if}>Occur Monthly</option>
+							<option value="week" {if $order.schedule.every == "week"}selected="selected"{/if}>Occur Weekly</option>
+						</select>
+					</div>
+					<div class="field control-group span3 row every_option week_day {if $order.schedule.every != "week"}hidden{/if}">
+						<select name="order[schedule][day]">
+							<option value="">Starting from order date</option>
+							<option value="1" {if $order.schedule.day == 1}selected="selected"{/if}>On Monday</option>
+							<option value="2" {if $order.schedule.day == 2}selected="selected"{/if}>On Tuesday</option>
+							<option value="3" {if $order.schedule.day == 3}selected="selected"{/if}>On Wednesday</option>
+							<option value="4" {if $order.schedule.day == 4}selected="selected"{/if}>On Thursday</option>
+							<option value="5" {if $order.schedule.day == 5}selected="selected"{/if}>On Friday</option>
+						</select>
+					</div>
+					<div class="field control-group span3 row every_option week_day {if $order.schedule.every != "week"}hidden{/if}">
+						<select name="order[schedule][span]">
+							<option value="1" {if $order.schedule.span == 1}selected="selected"{/if}>Every week</option>
+							<option value="2" {if $order.schedule.span == 2}selected="selected"{/if}>Every 2 weeks</option>
+							<option value="3" {if $order.schedule.span == 3}selected="selected"{/if}>Every 3 weeks</option>
+						</select>
+					</div>
+					<div class="field control-group span3 every_option month_day {if $order.schedule.every != "month"}hidden{/if}">
+						<select name="order[schedule][day]">
+							<option value="">Starting from original order date</option>
+							{function month_option}
+								<option value="{$day}" {if $order.schedule.day == $day}selected="selected"{/if}>On the {$day}{if $day == 1}st {elseif $day == 2}nd{elseif $day == 3}rd{elseif $day > 3 && $day < 21}th{elseif $day % 10 == 1}st{elseif $day % 10 == 2}nd{elseif $day % 10 == 3}rd{else}th{/if}</option>
+							{/function}
+							{for $day=1 to 30}
+								{month_option day=$day}
+							{/for}
+						</select>
+					</div>
+					<div class="field control-group span3 row every_option month_day {if $order.schedule.every != "month"}hidden{/if}">
+						<select name="order[schedule][span]">
+							<option value="1" {if $order.schedule.span == 1}selected="selected"{/if}>Every month</option>
+							<option value="2" {if $order.schedule.span == 2}selected="selected"{/if}>Every 2 months</option>
+							<option value="3" {if $order.schedule.span == 3}selected="selected"{/if}>Every 3 months</option>
+							<option value="4" {if $order.schedule.span == 4}selected="selected"{/if}>Every 4 months</option>
+							<option value="5" {if $order.schedule.span == 5}selected="selected"{/if}>Every 5 months</option>
+							<option value="6" {if $order.schedule.span == 6}selected="selected"{/if}>Every 6 months</option>
+						</select>
+					</div>
+				</div>
+				<div class="row schedule_every schedule_date">
+					<div class="field control-group span3">
+						<select name="order[schedule][buffer]">
+							<option value="">No buffer</option>
+							{function buffer_option}
+								<option value="{$days}" {if $order.schedule.buffer == $days}selected="selected"{/if}>Process {pluralize "$days days"} in advance</option>
+							{/function}
+							{for $days=1 to 7}
+								{buffer_option days=$days}
+							{/for}
+						</select>
+					</div>
+				</div>
+			</fieldset>
+		</div>
+		<div class="view-footer actions">
+			<button type="submit" class="btn btn-primary">Save schedule</button>
+			<button type="button" class="btn view-back">Back</button>
+		</div>
+	</form>
+</div>
+
+<script type="text/javascript">
+
+	// Schedule time span select.
+	$('select.schedule_every').change(function ()
+	{
+		var option = $(this).val();
+		
+		$('fieldset.schedule .every_option').hide().find('select').attr('disabled', true);
+		$('fieldset.schedule .every_option.'+option+'_day').show().find('select').attr('disabled', false);
+		
+		window.view_height = null;
+		$(window).trigger('resize');
+	});
+	
+	// Schedule type select.
+	$('select.schedule_type').change(function ()
+	{
+		var option = $(this).val();
+		
+		if (option == "")
+		{
+			$('fieldset.schedule').hide()
+				.find('select, input[type!="hidden"]').attr('disabled', true);
+		}
+		else
+		{
+			$('fieldset.schedule .row').hide()
+				.find('select, input[type!="hidden"]').attr('disabled', true);
+				
+			$('fieldset.schedule .row.schedule_'+option).show()
+				.find('select, input[type!="hidden"]').attr('disabled', false);
+				
+			$('select.schedule_every').trigger('change');
+				
+			$('fieldset.schedule').fadeIn();
+		}
+		
+		window.view_height = null;
+		$(window).trigger('resize');
+	})
+	.trigger('change');
+
+</script>

@@ -1,0 +1,166 @@
+#
+# This is an application config file.
+# Its purpose is to specify default app config options,
+# which may be overriden by a local environment config file.
+#
+app:
+  debug: false
+
+#
+# Map domains to templates.
+#   Format:
+#      domain_routes:
+#        <template-name>: <domain-regex>
+#        ...
+#
+domain_routes:
+  admin: admin.*
+  alpha: .*
+
+#
+# Default app settings.
+# Specify production-level settings here, override
+# in environment config (i.e. local.yml).
+#
+settings:
+
+  # Tax settings
+  taxes:
+  
+    # Sales taxes
+    sales:
+      name: Sales Tax
+      rate: 8.75
+      conditions:
+      	# Regex to match [state]_[country]
+        state: (CA|California)_US
+      exemptions:
+        role: retailer
+
+  # Payment settings
+  payments:
+    
+    # Credit card gateway 
+    card:
+      name: Credit card
+      enabled: true
+      gateway: stripe
+      secret_key: 
+      publishable_key: 
+
+    # Account credits
+    credit:
+      name: Account credit
+      enabled: true
+
+    # Invoice payments
+    invoice:
+      name: Invoice
+      enabled: true
+      net_days: 30
+      alert_email: admin@your-domain.com
+      roles:
+        - retailer
+
+    # Cash payments
+    cash:
+      name: Cash
+      enabled: true
+
+  # Shipping settings
+  shipments:
+  
+    # Default shipping methods
+    default:
+      enabled: true
+      price_weight_ratio: 1
+      methods:
+        - name: FedEx Ground
+          price: 5
+
+    # FedEx plugin settings
+    fedex:
+      enabled: false
+      key: 
+      password: 
+      account:
+      meter:
+      markup: 10%
+      shippers:
+        - 
+          address: 
+          city: 
+          state: 
+          zip: 
+          country: US
+      methods:
+        FEDEX_GROUND: true #FedEx Ground
+        FEDEX_2_DAY: true #FedEx 2-Day Air
+        FEDEX_2_DAY_AM: false #FedEx 2-Day Air A.M.
+        FIRST_OVERNIGHT: false #FedEx First Overnight
+        STANDARD_OVERNIGHT: true #FedEx Standard Overnight
+        PRIORITY_OVERNIGHT: false #FedEx Priority Overnight
+        FEDEX_EXPRESS_SAVER: false #FedEx Express Saver
+        INTERNATIONAL_PRIORITY: false #FedEx Priority International
+
+    # UPS plugin settings
+    ups:
+      enabled: false
+      license:
+      login:
+      password:
+      markup: 10%
+      shippers:
+        -
+          account:
+          city:
+          state:
+          zip: 
+          country: US
+      methods:
+        01: true #UPS Next Day Air
+        02: true #UPS Second Day Air
+        03: true #UPS Ground
+        11: false #UPS Standard
+        12: true #UPS Three-Day Select
+        13: false #UPS Next Day Air Saver
+        65: false #UPS Worldwide Saver
+        07: false #UPS Worldwide Express
+        08: false #UPS Worldwide Expedited
+        14: false #UPS Next Day Air Early A.M.
+        54: false #UPS Worldwide Express Plus
+        59: false #UPS Second Day Air A.M.
+
+  # Email templates
+  emails:
+    auth:
+      text: /emails/auth.txt
+    order:
+      text: /emails/order.txt
+      html: /emails/order.html
+    shipment:
+      text: /emails/shipment.txt
+      html: /emails/shipment.html
+    invoice:
+      text: /emails/invoice.txt
+      html: /emails/invoice.html
+    overdue:
+      text: /emails/overdue.txt
+
+  # Account roles
+  roles:
+    admin:
+      allow: *
+      description: Online administrator
+    retailer:
+      description: Wholesale customer
+  
+  # Image settings
+  images:
+    products:
+      - default
+      - default1
+      - default2
+    categories:
+      brands:
+        - default

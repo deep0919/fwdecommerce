@@ -1,0 +1,199 @@
+{extend "admin"}
+
+{extend "default-entry" for="carts"}
+{$cart = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Cart #{$cart.id}
+			<small>/ {$cart.items|count} {pluralize word="item" if_many=$cart.items}
+				{if $cart.order_id}
+					<span class="label label-success">Order #{$cart.order_id}</span>
+				{elseif $cart.abandoned}
+					<span class="label label-important">Abandoned</span>
+				{else}
+					<span class="label">Shopping</span>
+				{/if}
+			</small>
+		</h2>
+		<div class="actions">
+			<a class="btn view-back" href="">Back</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="">
+		{render "messages"}
+		<div class="view-content tabbable">
+			
+			<div class="tab-content">
+				<div class="tab-pane items {if !$params.tab}active{/if}">
+					
+					{if $cart.items}
+						<table class="table table-bordered table-condensed">
+							<tr>
+								<th>Item</th>
+								<th class="qty">Qty</th>
+								<th class="total">Price</th>
+							</tr>
+							{foreach $cart.items as $id => $item}
+								<tr>
+									<td>
+										<a class="view-link" href="/products/entry/{$item.id}">{$item.name}</a>
+										{if $item.variant}
+											<br /><em>{$item.variant.name}</em>
+										{/if}
+									</td>
+									<td>{$item.quantity}</td>
+									<td>{($item.price*$item.quantity)|money} <small class="muted">{if $item.quantity > 1} {$item.price|money} each{/if}</small></td>
+								</tr>
+								{foreach $item.options as $option}
+									<tr class="option">
+										<td>&mdash; {$option.name|escape}</td>
+										<td>{$option.quantity|default:"&mdash;"}</td>
+										<td>{if $option.price}{($option.price*$option.quantity)|money} <small class="muted nowrap">{if $option.quantity > 1} {$option.price|money} each{/if}{else}&mdash;{/if}</small></td>
+									</tr>
+								{/foreach}
+							{/foreach}
+							{if $cart.order.shipping.method}
+								<tr>
+									<td>Shipping: {$cart.order.shipping.method}</td>
+									<td>&mdash;</td>
+									<td>{($cart.shipping_total-$cart.shipping_discount)|money} {if $cart.shipping_discount}<strike class="muted">{$cart.shipping_total|money}</strike>{/if}</td>
+								</tr>
+							{/if}
+							{if $cart.tax_total > 0}
+								<tr>
+									<td>{$cart.taxes.sales.name|default:
+										$cart.taxes.vat.name|default:
+											"Taxes"}</td>
+									<td>&mdash;</td>
+									<td>{$cart.tax_total|money}</td>
+								</tr>
+							{/if}
+							{if $cart.discount_total}
+								<tr>
+									<td>
+										Discount {if $cart.discounts.coupon}(<a href="/discounts/entry/{$cart.discounts.coupon.id}" class="view-link">{$cart.coupon_code}</a>){/if}
+									</td>
+									<td>&mdash;</td>
+									<td>{(-$cart.discount_total)|money}</td>
+								</tr>
+							{/if}
+							<tr>
+								<th>Total</td>
+								<th>{$cart.quantity}</th>
+								<th>
+									{$cart.grand_total|money}
+								</th>
+							</tr>
+						</table>
+					{else}
+						<table class="table table-bordered">
+							<tr><td>No items</td></tr>
+						</table>
+					{/if}
+					
+					<table class="table table-bordered table-condensed">
+						{if $cart.account_id}
+							<tr>
+								<th width="60">Account:</th>
+								<th><a class="view-link" href="/accounts/entry/{$cart.account_id}">{$cart.account.name|escape}</a>
+								&nbsp;{foreach $cart.account.roles as $role}<span class="label">{$role}</span> &nbsp;{/foreach}</th>
+							</tr>
+						{/if}
+						<tr>
+							<td width="60">E-mail:</td>
+							<td>{$cart.order.email|escape|default:"Unknown"}</td>
+						</tr>
+						{if $cart.order.phone}
+							<tr>
+								<td>Phone:</td>
+								<td>{$cart.order.phone|escape}</td>
+							</tr>
+						{/if}
+					</table>
+					
+					{if $cart.order.shipping}
+						<table class="table table-bordered table-condensed">
+							<tr><th colspan="2">Shipping</th></tr>
+							{if $cart.order.shipping.method}
+								<tr>
+									<td width="60">Method:</td>
+									<td>{$cart.order.shipping.method} ({$cart.shipping_total|money})</td>
+								</tr>
+							{/if}
+							<tr>
+								<td>Name:</td>
+								<td>{$cart.order.name|escape}</td>
+							</tr>
+							<tr>
+								<td>Address:</td>
+								<td>{$cart.order.shipping.address|escape},
+									{if $cart.order.shipping.city}{$cart.order.shipping.city|escape},{/if}
+									{if $cart.order.shipping.state}{$cart.order.shipping.state|escape}{/if}
+									{$cart.order.shipping.zip|escape}</td>
+							</tr>
+						</table>
+					{else}
+						<table class="table table-bordered">
+							<tr><td>No shipping information</td></tr>
+						</table>
+					{/if}
+					{if $cart.order.billing}
+						<table class="table table-bordered table-condensed">
+							<tr><th colspan="2">Billing</th></tr>
+							<tr>
+								<td width="60">Method:</td>
+								<td>
+									{if $cart.order.billing.method == "card"}
+										Credit card
+										{if $cart.order.billing.card}
+											{$card = $cart.order.billing.card}
+											<span class="label label-success">
+												{$card.type|escape}
+												{$card.last4|escape}
+												(Expires: {$card.exp_month|escape}/{$card.exp_year|escape})
+											</span>
+										{else}
+											<span class="label">missing</span>
+										{/if}
+									{else}
+										{$cart.order.billing.method|capitalize}
+									{/if}
+								</td>
+							</tr>
+							<tr>
+								<td>Name:</td>
+								<td>{$cart.order.billing.name|escape}</td>
+							</tr>
+							<tr>
+								<td>Address:</td>
+								<td>{$cart.order.billing.address|escape},
+									{if $cart.order.billing.city}{$cart.order.billing.city|escape},{/if}
+									{if $cart.order.billing.state}{$cart.order.billing.state|escape}{/if}
+									{$cart.order.billing.zip|escape}</td>
+							</tr>
+						</table>
+					{else}
+						<table class="table table-bordered">
+							<tr><td>No billing information</td></tr>
+						</table>
+					{/if}
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			{if $cart.order_id}
+				<button type="button" class="btn btn-success view-link" data-href="/orders/entry/{$cart.order_id}">Go to Order #{$cart.order_id}</button>
+			{/if}
+			<button type="button" class="btn view-cancel">Close</button>
+			{if $cart}
+				{if !$cart.is_deleted}
+					<a class="trash view-link" href="/carts/entry/{$cart.id}?cart[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+				{else}
+					<a class="trash view-link undo" href="/carts/entry/{$cart.id}?cart[:restore]=true" data-post="true">Undo <i class="icon-trash"></i></a>
+				{/if}
+			{/if}
+		</div>
+	</form>
+</div>

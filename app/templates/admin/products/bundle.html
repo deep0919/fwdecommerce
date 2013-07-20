@@ -1,0 +1,56 @@
+{extend "admin"}
+
+{extend "default-entry" for="products"}
+
+{$id = $request.id}
+{$product = $request.entry}
+
+{$item_id = $request.related_id}
+{$item = $request.related_entry}
+
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{if $item_id}Bundle product #{$item_id}{else}Add product{/if} <small>/ {$product.name}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="/products/bundle/{$product.id}/items{if $item_id}/{$item_id}{/if}?tab=">
+		{render "messages"}
+		<div class="view-content">
+			<div class="row">
+				<div class="field control-group span4">
+					<label>Product <span class="error">{$errors.id}</span></label>
+					<select name="item[id]" class="product">
+						<option value="">Choose a product...</option>
+						{foreach get("/products", [order => "name ASC", is_bundle => ['$ne' => true], limit => null]) as $p}
+							<option value="{$p.id}" {if $p.id == $item.id}selected="selected"{/if}>{$p.name} ({$p.sku})</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>
+			<div class="row">
+				<div class="field control-group span1">
+					{$qty = ($item.quantity > 0) ? $item.quantity : 1}
+					<label>Quantity <span class="error">{if $errors.quantity}!{/if}</span></label>
+					<input type="text" name="item[quantity]" value="{$qty}" />
+				</div>
+				<div class="field control-group span1">
+					<label>Sort order</span></label>
+					<input type="text" name="item[sort]" value="{$item.sort}" />
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<button type="submit" class="btn btn-primary">Save item</button>
+			<button type="button" class="btn view-back">Back</button>
+			
+			{if $item_id}
+				<a class="trash confirm view-link" href="/products/entry/{$product.id}/items/{$item_id}?item[:delete]=true&tab=" data-post="true"><i class="icon-trash"></i></a>
+			{/if}
+		</div>
+	</form>
+</div>
+

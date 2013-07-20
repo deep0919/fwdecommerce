@@ -1,0 +1,135 @@
+{extend "admin"}
+
+{* Display e-mail preview *}
+{args $email $output $id}
+
+{* No layout *}
+{$request.layout = null}
+
+{if $output == "text"}
+	{$output = "txt"}
+{/if}
+
+{$view = "emails/{$email}.{$output}"}
+
+{$settings = get("/settings/emails")}
+
+{capture name="content"}
+	{if $id}
+		{if $email == "order"}
+		
+			{render $view order=get("/orders/{$id}")}
+			
+		{elseif $email == "shipment"}
+		
+			{render $view shipment=get("/shipments/{$id}")}
+			
+		{elseif $email == "invoice"}
+		
+			{$payment = get("/payments/{$id}")}
+			
+			{* Send invoice email? *}
+			{if $params.email && $request.post}
+			
+				{$data = $params.email|merge:$settings[$email]}
+				{$data.payment = $payment}
+				{$result = post("/emails/invoice", $data)}
+				
+				{* Save date sent? *}
+				{if !$result.errors}
+					{put [date_sent => "Y-m-d H:i:s"|date] in $payment}
+				{/if}
+				
+			{/if}
+			
+			{render $view payment=$payment}
+		
+		{/if}
+	{else}
+	
+		{render $view}
+	{/if}
+{/capture}
+
+<style>
+	body {
+		background: #eee;
+	}
+	#preview {
+		width: 700px;
+		box-shadow: 0 4px 15px #bbb;
+		padding: 20px;
+		margin: 20px auto;
+		background-color: #fff;
+	}
+	#preview pre {
+		margin: 0;
+	}
+	#meta {
+		border-bottom: 1px solid #ccc;
+		font-family: monospace;
+		padding-bottom: 20px;
+		margin-bottom: 20px;
+	}
+	form label {
+		display: inline-block;
+		width: 70px;
+		text-align: right;
+	}
+	form .field {
+		padding: 2px 0;
+	}
+	form .field input[type="text"] {
+		width: 560px;
+		padding: 4px;
+	}
+	form .actions {
+		padding-top: 10px;
+		margin-left: 80px;
+	}
+</style>
+
+<div id="preview">
+	<div id="meta">
+		{if $email == "invoice"}
+			{if $result.errors}
+				{$result.errors.0} &mdash; <a href="">Try again</a>
+			{elseif $result}
+				Invoice sent to {$params.email.to} &mdash; <a href="">Back</a>
+			{else}
+				<form class="invoice" action="" method="post">
+					<div class="field control-group">
+						<label>Subject</label>
+						<input type="text" name="email[subject]" value="{$settings[$email].subject}" placeholder="{$settings[$email].subject}" />
+					</div>
+					<div class="field">
+						<label>From</label>
+						<input type="text" name="email[from]" value="{$settings[$email].from}" placeholder="{$settings[$email].from}" />
+					</div>
+					<div class="field">
+						<label>To</label>
+						<input type="text" name="email[to]" value="{$payment.account.email}" />
+					</div>
+					<div class="field">
+						<label>CC</label>
+						<input type="text" name="email[cc]" value="{$request.account.email}" />
+					</div>
+					<div class="actions">
+						<button type="submit" class="btn btn-success">Send invoice</button>
+					</div>
+				</form>
+			{/if}
+		{else}
+			Subject: {$settings[$email].subject}<br />
+			From: {$settings[$email].from}<br />
+			To: ...
+		{/if}
+	</div>
+	{if $output == "html"}
+		{$smarty.capture.content}
+	{elseif $output == "txt"}
+		<code>
+			<pre>{$smarty.capture.content|trim}</pre>
+		</code>
+	{/if}
+</div>

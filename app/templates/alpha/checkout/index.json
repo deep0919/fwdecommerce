@@ -1,0 +1,75 @@
+{extend "session"}
+
+{**
+ * This page will update the cart with order data
+ * as the checkout form is submitted. It's a good
+ * place to put custom checkout validation/logic.
+ * 
+ * It returns a JSON result for checkout/index.html
+ * to validate against.
+ *}
+
+{if $params.order}
+
+	{* Associate order with account by email *}
+	{if $email = $params.order.email}
+	
+		{if $ex_account = "/accounts/{$email|urlencode}"|get}
+		
+			{* Update existing account *}
+			{$ex_account = "/accounts/{$ex_account.id}"|put:[
+				email => $email,
+				name => $params.order.name,
+				phone => $params.order.phone
+			]}
+			{$account_id = $ex_account.id}
+			
+		{else}
+		
+			{* Create new account *}
+			{$new_account = "/accounts"|post:[
+				email => $email,
+				name => $params.order.name,
+				phone => $params.order.phone
+			]}
+			{$account_id = $new_account.id}
+		{/if}
+	{else}
+	
+		{* Default to current account *}
+		{$account_id = $request.cart.account_id}
+	{/if}
+	
+	{* Suggest credit card billing method *}
+	{if $params.order.billing}
+		{$params.order.billing.method = "card"}
+	{/if}
+	
+	{* Put order params in cart *}
+	{$result = $request.cart|put:[
+		order => $params.order,
+		account_id => $account_id
+	]}
+{/if}
+
+{* Apply coupon code? *}
+{if $params.coupon_code !== null}
+
+	{$coupon_result = $request.cart|put:[coupon_code => $params.coupon_code]}
+
+	{* Merge coupon errors with order result? *}
+	{if $coupon_result.errors}
+	
+		{$errors = $result.errors}
+		{$errors.order.coupon_code = $coupon_result.errors.coupon_code}
+		{$result.errors = $errors}
+	{/if}
+	
+	{* Remove discount if code is blank *}
+	{if !$params.coupon_code}
+		{delete "{$request.cart}/discounts"}
+	{/if}
+{/if}
+
+{* Encode result as json *}
+{return $result|json_encode}

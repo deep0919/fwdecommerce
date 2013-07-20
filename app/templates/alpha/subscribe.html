@@ -1,0 +1,56 @@
+{extend "session"}
+
+{* E-mail submitted? *}
+{if $email = $params.email}
+
+	{* Check if already subscribed *}
+	{$existing = "/channels/subscribers/entries"|get:[
+		name => $email|strtolower
+	]}
+
+	{* Put new subscriber in channel *}
+	{if !$existing}
+		{"/channels/subscribers/entries"|post:[
+			name => $email|strtolower,
+			description => $params.description,
+			':validate' => [
+				email => [name]
+			]
+		]}
+	{/if}
+
+	{* Thank the subscriber *}
+	{redirect "/subscribe?thanks={$email|urlencode}"}
+	
+{elseif $params.thanks}
+
+	<div class="content-page">
+		<h1 class="content-page-header">
+			Welcome {$params.thanks|escape}
+		</h1>
+		<article class="content-page-content">
+			<p>You may unsubscribe from our e-mails at any time.</p>
+			<div class="form-actions">
+				<p><a href="/" class="btn">Go Home</a></h3>
+			</div>
+		</article>
+	</div>
+
+{else}
+	
+	<div class="content-page">
+		<h1 class="footer-header">Subscribe</h1>
+		<form class="signup-newsletter" method="post" action="/subscribe">
+			<div class="row">
+				<div class="form-field span4">
+					<label>Get discounts and updates by e-mail</label>
+					<input type="email" name="email" placeholder="your@email.com" />
+					<input type="hidden" name="description" value="Subscribed from {$request.uri}" />
+				</div>
+			</div>
+			<div class="form-actions">
+				<button type="submit" class="btn btn-large btn-cta">Sign Up</button>
+			</div>
+		</form>
+	</div>
+{/if}

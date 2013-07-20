@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<!-- Meta -->
+	<meta charset="utf-8">
+	<meta name="description" content="{$request.page_description|escape}" />
+	<meta name="keywords" content="{$request.page_keywords|escape}" />
+	<meta name="robots" content="index,follow" />
+	<meta name="googlebot" content="index,follow" />
+	
+	<title>
+		{if $request.page_title}
+			{$request.page_title} | {$request.header_logo_block.value|strip_tags}
+		{else}
+			{$request.header_logo_block.value} | Forward: the platform for custom e-commerce
+		{/if}
+	</title>
+	
+	<!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+	<!--[if lt IE 9]>
+		<script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	
+	<!-- Bootstrap CDN -->
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap.min.css">
+	
+	<!-- Default Theme CSS -->
+	<link rel="stylesheet" href="/alpha/css/default.css" />
+	
+	<!-- jQuery -->
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+</head>
+<body id="alpha_{$request.action}">
+	<div id="page">
+		<div id="header">
+			<div class="header-top">
+				<div class="container">
+					<h2 class="header-logo">
+						<a href="/">
+							<img src="{image type=entries id=$request.header_logo_block.id name=image height=30}" />
+							{$request.header_logo_block.value}
+						</a>
+					</h2>
+					<nav class="header-nav-sub">
+						{if $request.layout_for_checkout}
+							<b class="header-nav-item">Need help? {$request.contact_phone_block.value}</b>
+						{else}
+							<span class="header-nav-item" id="header-nav-cart">
+								<a href="/cart" class="count">{pluralize "{$request.cart.items|count} Items"}</a>
+								<a href="/cart" class="checkout">Checkout</a>
+							</span>
+							<form class="header-nav-item header-nav-search" method="get" action="/search">
+								<input type="text" name="q" value="{$params.q}"
+									placeholder="Search..." class="query placeholder" />
+							</form>
+						{/if}
+					</nav>
+				</div>
+			</div>
+			<nav class="header-nav-main">
+				<div class="container">
+					{if $request.layout_for_checkout}
+						<span class="header-nav-item">
+							<a class="header-nav-item" href="/cart">
+								Back to Cart
+							</a>
+						</span>
+					{else}
+						{* Get top-level nav categories *}
+						{$request.nav_categories = get("/categories", [
+							parent_id => null
+						])}
+						{foreach $request.nav_categories as $category}
+							<nav class="header-nav-item">
+								<a href="/categories/{$category.slug}">
+									{$category.name}
+								</a>
+								<section>
+									<ul class="header-nav-menu">
+										{foreach $category.children as $child}
+											<li>
+												<a href="/categories/{$child.slug}">{$child.name}</a>
+											</li>
+											{if $category.children|count > 10
+												&& $child@iteration % ($category.children|count/2)|round == 0}
+												</ul><ul class="header-nav-menu">
+											{/if}
+										{/foreach}
+									</ul>
+								</section>
+							</nav>
+						{/foreach}
+					{/if}
+				</div>
+			</nav>
+		</div>
+		<div id="content">
+			<div class="container">
+				<div class="content">
+				
+					{$content_for_layout}
+					
+				</div>
+			</div>
+		</div>
+		<div id="footer">
+			{if !$request.layout_for_checkout}
+				<div class="footer-top">
+					<div class="container">
+						<div class="row">
+							<section class="about span4">
+								<h5 class="footer-header">About</h5>
+								<p>{$request.about_summary_block.value}</p>
+								<p><a href="/pages/about">More About Us</a></p>
+							</section>
+							<section class="links span2 offset1">
+								<h5 class="footer-header">Shop</h5>
+								<ul class="footer-menu">
+									{foreach $request.nav_categories as $category}
+										<li><a href="/categories/{$category.slug}">{$category.name}</a></li>
+									{/foreach}
+								</ul>
+							</section>
+							<section class="signup span4 offset1">
+								<h5 class="footer-header">Newsletter</h5>
+								<form class="signup-newsletter" method="post" action="/subscribe">
+									<div class="form-field">
+										<label>Get discounts and updates by e-mail</label>
+										<input type="email" name="email" placeholder="your@email.com" />
+										<input type="hidden" name="description" value="Subscribed from {$request.uri}" />
+									</div>
+									<div class="form-actions">
+										<button type="submit" class="btn">Sign Up</button>
+									</div>
+								</form>
+							</section>
+						</div>
+					</div>
+				</div>
+				<div class="footer-bottom">
+					<div class="container">
+						<!-- Social network links -->
+						<div class="social-icons pull-left">
+							<a class="blog" href="/blog">Blog</a> &nbsp;
+							<a class="fb" target="_blank" href="">Facebook</a> &nbsp;
+							<a class="tw" target="_blank" href="">Twitter</a> &nbsp;
+							<a class="gp" target="_blank" href="">Google+</a> &nbsp;
+							<a class="pn" target="_blank" href="">Pinterest</a>
+						</div>
+						<small class="footer-attrib pull-right">
+							<a href="/pages/privacy">Privacy</a> &mdash;
+							<a href="/pages/terms">Terms</a> &mdash;
+							Copyright &copy; {"Y"|date} &mdash; Powered by <a href="http://getfwd.com">Forward Commerce</a>
+						</small>
+					</div>
+				</div>
+			{/if}
+		</div>
+	</div>
+	
+	<!-- Default Theme JS -->
+	<script type="text/javascript" src="/alpha/js/default.js"></script>
+{*	
+	<!-- Google Analytics -->
+	<script type="text/javascript">
+	
+	  var _gaq = _gaq || [];
+	  _gaq.push(['_setAccount', '<insert-ga-account-id-here>']);
+	  //_gaq.push(['_setDomainName', '<optional-canonical-domain-here>']);
+	  _gaq.push(['_setAllowLinker', true]);
+	  _gaq.push(['_trackPageview']);
+	  
+	  {if $order = $request.just_completed_order}
+		  
+	  	  // Track e-commerce conversions
+		  _gaq.push(['_addTrans',
+		    '{$order.id}',						// order ID - required
+		    '<insert-store-name-here>',			// affiliation or store name
+		    '{$order.grand_total|total}',		// total - required
+		    '{$order.tax_total|total}',			// tax
+		    '{$order.shipping_total|total}',	// shipping
+		    '{$order.shipping.city}',			// city
+		    '{$order.shipping.state}',			// state or province
+		    '{$order.shipping.country}'			// country
+		  ]);
+		
+		  {foreach $order.items as $item}
+			  _gaq.push(['_addItem',
+			    '{$order.id}',					// order ID - required
+			    '#{$item.id}',					// SKU/code - required
+			    '{$item.name}',					// product name
+			    '',								// category or variation
+			    '{$item.price}',				// unit price - required
+			    '{$item.quantity}'				// quantity - required
+			  ]);
+		  {/foreach}
+		  _gaq.push(['_trackTrans']);			//submits transaction to the Analytics servers
+	  {/if}
+	
+	  (function() {
+	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+	
+	</script>
+	
+	<!-- Facebook SDK -->
+	<div id="fb-root"></div>
+	<script>(function(d, s, id) {
+	  var js, fjs = d.getElementsByTagName(s)[0];
+	  if (d.getElementById(id)) return;
+	  js = d.createElement(s); js.id = id;
+	  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=";
+	  fjs.parentNode.insertBefore(js, fjs);
+	}(document, 'script', 'facebook-jssdk'));</script>
+	
+	<!-- Pinterest button -->
+	<script type="text/javascript" src="//assets.pinterest.com/js/pinit.js"></script>
+	
+	<!-- Google button -->
+	<script type="text/javascript">
+	  (function() {
+	    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+	    po.src = 'https://apis.google.com/js/plusone.js';
+	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+	  })();
+	</script>
+*}
+</body>
+</html>

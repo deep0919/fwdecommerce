@@ -1,0 +1,117 @@
+{extend "session"}
+
+{* Post item in cart *}
+{if $request.post && $params.item}
+
+	{* Create a cart? *}
+	{if !$request.cart}
+	
+		{$request.cart = post("/carts", [
+			account_id => $session.account_id
+		])}
+		
+		{* Remember cart ID *}
+		{$session.cart_id = $request.cart.id}
+	{/if}
+
+	{* No errors, post item to cart! *}
+	{post [item => $params.item] in $request.cart}
+	
+	{redirect "/cart"}
+{/if}
+
+{* Update existing cart? *}
+{if $request.cart}
+
+	{if $request.post && $params.items}
+	
+		{* Update items *}
+		{put [items => $params.items] in $request.cart}
+		
+		{* Proceed to checkout? *}
+		{if $params.checkout}
+			{redirect "/checkout"}
+		{else}
+			{redirect "/cart"}
+		{/if}
+		
+	{elseif $params.remove}
+
+		{delete "{$request.cart}/items/{$params.remove|urlencode}"}
+		{redirect "/{$request.action}"}
+	{/if}
+{/if}
+
+
+<div class="cart-page">
+
+	{if $request.cart.items|count == 0}
+	
+		<h1>Your cart is empty! <a href="/">Go shopping &raquo;</a></h1></h1>
+		
+	{else}
+		<h1>Your Cart</h1>
+		<form class="cart-page-form" method="post" action="https://{$request.host}/cart">
+			<table class="table cart-table" cellspacing="0">
+				<tr>
+					<th class="cart-table-item" colspan="2">Item</th>
+					<th class="cart-table-remove">&nbsp;</th>
+					<th class="cart-table-qty">Qty</th>
+					<th class="cart-table-price">Price</th>
+				</tr>
+				<tbody>
+				{* List cart items *}
+				{foreach $request.cart.items as $id => $item}
+					<tr>
+						<td class="cart-table-image">
+							<img src="{image type=products id=$item.id width=75 height=75}" />
+						</td>
+						<td class="cart-table-item">
+							<h4 class="name">
+								<a href="/products/{$item.slug}">{$item.name}</a>
+							</h4>
+							{if $item.variant}
+								<small class="variant">{$item.variant.name}</small>
+							{/if}
+							{if $item.options}
+								<ul class="options">
+									{foreach $item.options as $key => $option}
+										<li>
+											{$option.name}
+										</li>
+									{/foreach}
+								</ul>
+							{/if}
+						</td>
+						<td class="cart-table-remove">
+							<a class="remove" href="/cart?remove={$id}" title="Remove this item"><i class="icon-remove"></i></a>
+						</td>
+						<td class="cart-table-qty">
+							<input type="text" name="items[{$id}][quantity]" value="{$item.quantity}" />
+						</td>
+						<td class="cart-table-price">
+							{if $item.price > 0}
+								{if $item.quantity > 1}
+									<span class="each">{$item.price|money} ea.</span>
+								{/if}
+								{($item.price*$item.quantity)|money}
+							{else}
+								&mdash;
+							{/if}
+						</td>
+					</tr>
+				{/foreach}
+				</tbody>
+			</table>
+			<div class="row">
+				<div class="cart-table-actions pull-right">
+					<button type="submit" name="update" class="cart-table-update btn btn-large">
+						Update</button>
+					&nbsp;&nbsp;
+					<button type="submit" name="checkout" class="cart-table-checkout btn btn-large btn-cta" value="1">
+						Checkout</button>
+				</div>
+			</div>
+		</form>
+	{/if}
+</div>

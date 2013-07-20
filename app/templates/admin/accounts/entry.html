@@ -1,0 +1,179 @@
+{extend "admin"}
+
+{* Make password optional *}
+{if !$params.account.password}
+	{$params.account.password = null}
+{/if}
+
+{extend "default-entry" for="accounts"}
+{$account = $request.entry}
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{$account.name|escape} <small>/ Account #{$account.id}</small></h2>
+		<div class="actions">
+			<a class="btn view-back" href="">Back</a>
+		</div>
+	</div>
+	<form class="view-body tabbable" method="post" action="/accounts/entry/{$account.id}">
+		<div class="view-content">
+			{render "messages"}
+			<!--<ul class="nav nav-pills">
+				<li class="{if !$params.tab}active{/if}"><a href="">Details</a></li>
+			</ul>-->
+			<div class="tab-content">
+				<div class="tab-pane default {if !$params.tab}active{/if}">
+					<table class="table table-bordered table-condensed with-actions">
+						<tr>
+							<th width="60">Name:</th>
+							<th>
+								<div class="with-actions">
+									{$account.name|escape}
+									&nbsp;
+									{foreach $account.roles as $role}
+										<span class="label">{$role}</span> &nbsp;
+									{/foreach}
+									<code class="act"><a class="view-link" href="/accounts/edit/{$account.id}">edit</a></code>
+								</div>
+							</th>
+						</tr>
+						<tr>
+							<td>E-mail:</td>
+							<td>{$account.email|escape}</td>
+						</tr>
+						<tr>
+							<td>Phone:</td>
+							<td>{$account.phone|escape|default:"Unknown"}</td>
+						</tr>
+						{if $account.password}
+							<tr>
+								<td>Password:</td>
+								<td>{"*"|str_repeat:8}</td>
+							</tr>
+						{/if}
+						{if $account.ip_address}
+							<tr>
+								<td>IP Addr:</td>
+								<td>{$account.ip_address}</td>
+							</tr>
+						{/if}
+						{if $account.notes}
+							<tr>
+								<td>Notes:</td>
+								<td>{$account.notes|escape|nl2br}</td>
+							</tr>
+						{/if}
+					</table>
+					
+					{if $account.billing.default}					
+						<table class="table table-bordered table-condensed with-actions">
+							<tr>
+								<th colspan="2">
+									<div class="with-actions">
+										Default billing <code class="act"><a href="/accounts/billing/{$account.id}" class="view-link">{if $account.billing}edit{else}enter{/if} billing</a></code>
+									</div>
+								</th>
+							</tr>
+							{if $account.billing}
+								<tr>
+									<td width="60">Method:</td>
+									<td>
+										{if $account.billing.method == "card"}
+											Credit card
+											{if $account.billing.stripe}
+												{$card = $account.billing.card}
+												<span class="label label-success">
+													{$card.type|escape}
+													{$card.last4|escape}
+													(Expires: {$card.exp_month|escape}/{$card.exp_year|escape})
+												</span>
+											{else}
+												<span class="label">missing</span>
+											{/if}
+										{elseif $account.billing.method}
+											{$account.billing.method|capitalize}
+										{else}
+											None
+										{/if}
+									</td>
+								</tr>
+								{if $account.billing.name}
+									<tr>
+										<td>Name:</td>
+										<td>{$account.billing.name|escape}</td>
+									</tr>
+								{/if}
+								{if $account.billing.address}
+									<tr>
+										<td>Address:</td>
+										<td>{$account.billing.address|escape},
+											{if $account.billing.city}{$account.billing.city|escape},{/if}
+											{if $account.billing.state}{$account.billing.state|escape}{/if}
+											{$account.billing.zip|escape}</td>
+									</tr>
+								{/if}
+							{else}
+								<tr>
+									<td>None entered</td>
+								</tr>
+							{/if}
+						</table>
+					{/if}
+					
+					{if $account.credits}
+						<table class="table table-bordered table-condensed">
+							<tr>
+								<th colspan="4">Current balance: {$account.balance|money}</th>
+							</tr>
+							{foreach $account.credits as $payment}
+								<tr>
+									<td>
+										<span class="label label-{if $payment.action == "charge"}success{else}{/if}" title="{$payment.reason|htmlspecialchars}">{$payment.action}</span>
+										Account
+									</td>
+									<td>
+										{$payment.amount|money}
+									</td>
+									<td>{$payment.date_created|age_date}</td>
+									<td><a class="view-link" href="/orders/entry/{$payment.order_id}">{if $payment.order_id}Order #{$payment.order_id}{/if}</a></td>
+								</tr>
+							{/foreach}
+						</table>
+					{/if}
+					
+					{if $account.orders}
+						<table class="table table-bordered table-condensed">
+							<tr>
+								<th colspan="4">Orders by this account:</th>
+							</tr>
+							{foreach $account.orders as $order}
+								<tr>
+									<td><a class="view-link" href="/orders/entry/{$order.id}">Order #{$order.id}</a></td>
+									<td>{$order.grand_total|money}</td>
+									<td><span class="label">{$order.status}</span></td>
+									<td>{$order.date_created|age_date}</td>
+								</tr>
+							{/foreach}
+						</table>
+					{else}
+						<table class="table table-bordered">
+							<tr><td>No orders yet</td></tr>
+						</table>
+					{/if}
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<span class="tab-controls default">
+				<button type="button" class="btn btn-success confirm view-link" data-href="/orders/new?order[account_id]={$account.id}" data-post="true"><i class="icon-plus-sign icon-white"></i> New order</button>
+			</span>
+			<button type="button" class="btn view-cancel">Close</button>
+			{if !$account.is_deleted}
+				<a class="trash view-link" href="/accounts/entry/{$account.id}?account[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+			{else}
+				<a class="trash view-link undo" href="/accounts/entry/{$account.id}?account[:restore]=true" data-post="true">Undo <i class="icon-trash"></i></a>
+			{/if}
+		</div>
+	</form>
+</div>

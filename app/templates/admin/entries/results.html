@@ -1,0 +1,45 @@
+{extend "admin"}
+
+{args $channel_slug}
+{get $channel from "/channels/$channel_slug"}
+
+{$query = [
+	channel_id => $channel.id,
+	search => $params.search,
+	where => $params.where,
+	page => $params.page
+]}
+
+{get $entries from "/entries" $query}
+
+{foreach $entries as $entry}
+	<li>
+		<div class="headline">
+			<a class="list-item" href="/entries/entry/{$entry.id}" id="item_entries_{$entry.id}"> 
+				<span class="name">{($entry.name|default:$entry.title|default:$entry.headline|default:"Entry #{$entry.id}")|escape}</span>
+			</a>
+		</div>
+		<small>
+			{($entry.description|strip_tags|truncate:100|default:($entry.date|date_format|default:$entry.slug))|escape}
+			<span class="date">
+				{$entry.date_created|age_date}
+			</span>
+			<span class="labels">
+				{if $entry.label || $entry.category}
+					<span class="label">
+						{($entry.label|default:$entry.category)|escape}
+					</span>
+				{/if}
+				{if $entry.status}
+					<span class="label label-{$entry.severity|default:info}">
+						{$entry.status}
+					</span>
+				{/if}
+			</span>
+		</small>
+	</li>
+{foreachelse}
+	<li class="empty">No entries found</li>
+{/foreach}
+
+{render "loadmore" with=$entries query=$query url="/entries/{$channel_slug}"}

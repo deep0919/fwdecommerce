@@ -1,0 +1,71 @@
+{extend "admin"}
+
+{extend "default-entry" for="emails"}
+{$email = $request.entry}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Email #{$email.id}</h2>
+	</div>
+	<form class="view-body tabbable" method="post" action="/emails/entry/{$email.id}">
+		{render "messages"}
+		<div class="view-content">
+			<table class="table table-bordered table-condensed">
+				<tr>
+					<th width="60">Subject:</th>
+					<th>{$email.subject|escape}</th>
+				</tr>
+				<tr>
+					<td>To:</td>
+					<td>{$email.to|escape}</td>
+				</tr>
+				{if $email.cc}
+					<tr>
+						<td>CC:</td>
+						<td>{$email.cc|escape}</td>
+					</tr>
+				{/if}
+				{if $email.bcc}
+					<tr>
+						<td>BCC:</td>
+						<td>{$email.bcc|escape}</td>
+					</tr>
+				{/if}
+				<tr>
+					<td>From:</td>
+					<td>{$email.from|escape}</td>
+				</tr>
+				<tr>
+					<td>Created:</td>
+					<td>{$email.date_created|date_format} at {$email.date_created|date_format:"%I:%M %p"}</td>
+				</tr>
+				{if $email.gateway}
+					<tr>
+						<td>Gateway:</td>
+						<td>{$email.gateway|escape}</td>
+					</tr>
+				{/if}
+			</table>
+			<h4>Text content</h4>
+			<div class="row">
+				<div class="span4">
+					{$email.text|dump}
+				</div>
+			</div>
+			<h4>HTM content</h4>
+			<div class="row">
+				<div class="span4">
+					{$email.html|dump}
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<button type="button" class="btn view-cancel">Close</button>
+			{if !$email.is_deleted}
+				<a class="trash view-link" href="/emails/entry/{$email.id}?email[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+			{else}
+				<a class="trash view-link undo" href="/emails/entry/{$email.id}?email[:restore]=true" data-post="true">Undo <i class="icon-trash"></i></a>
+			{/if}
+		</div>
+	</form>
+</div>

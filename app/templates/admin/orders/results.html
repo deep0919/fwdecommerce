@@ -1,0 +1,69 @@
+{extend "admin"}
+
+{$query = [
+	search => $params.search,
+	where => $params.where,
+	page => $params.page
+]}
+
+{get $orders from "/orders" $query}
+
+{foreach $orders as $order}
+	<li>
+		<span class="image count{if $order.items|count <= 4}{$order.items|count}{else}4{/if}">
+			{foreach $order.items as $id => $item}
+				{if $item@iteration > 4}
+					{break}
+				{/if}
+				<img src="{image for=$item type=products width=50 height=50}" />
+			{/foreach}
+			<span class="shadow"></span>
+		</span>
+		<div class="headline">
+			<a class="list-item" href="/orders/entry/{$order.id}" id="item_orders_{$order.id}"> 
+				<span class="name">Order #{$order.id} <small>/ {$order.name}</small></span>
+			</a>
+		</div>
+		<small>
+			{pluralize "{$order.items|@count} items"}
+			<b class="bull">&bull;</b> {$order.grand_total|money}
+			{if $order.shipping.method}
+				<b class="bull">&bull;</b> <span>{$order.shipping.method}</span>
+			{/if}
+			<span class="date">
+				{$order.date_created|age_date}
+			</span>
+			<span class="labels">
+				{if $order.notes}
+					<span class="label {if $order.public_notes}label-important{/if}">Notes</span>
+				{/if}
+				{if $order.error}
+					<span class="label label-important">Payment Error</span>
+				{/if}
+				{if $order.overdue}
+					<span class="label label-important">Payment Overdue</span>
+				{/if}
+				{if $order.date_scheduled}
+					<span class="label {if $order.status == pending}label-info{/if}">
+						{if $order.schedule.every}Recurring{else}Scheduled{/if}
+					</span>
+				{/if}
+				{$class = ""}
+				{if $order.status == "ready"}
+					{$class = "info"}
+				{elseif $order.status == "shipped"}
+					{$class = "success"}
+				{elseif $order.status == "cancelled"}
+					{$class = "important"}
+				{elseif $order.status == "returned"}
+					{$class = "warning"}
+				{/if}
+				<span class="label label-{$class}">{$order.status}</span>
+			</span>
+		</small>
+	</li>
+{foreachelse}
+	<li class="empty">No orders found</li>
+{/foreach}
+
+{render "loadmore" with=$orders query=$query url="/orders"}

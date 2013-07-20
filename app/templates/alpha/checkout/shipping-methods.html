@@ -1,0 +1,122 @@
+{extend "session"}
+
+{*
+ * This file is typically loaded by ajax
+ * to display the shipping methods available
+ * as order details are filled in.
+ *}
+
+{* Get shipping methods from cart *}
+{$shipping_methods = $request.cart.shipping_methods}
+
+{* Methods exist if enough order details were provided *}
+{if $shipping_methods && !$shipping_methods.errors}
+
+	{foreach $shipping_methods as $method}
+		<div class="form-field">
+			<label class="radio">
+				{$checked = ($method.name == $request.cart.order.shipping.method)
+					|| ($method@first && !$request.cart.order.shipping.method)}
+				<input type="radio" name="order[shipping][method]" value="{$method.name}"
+					{if $checked}checked="checked"{/if} />
+				{$method.name} &mdash;
+					{if $method.price != 0}{$method.price|money}{else}FREE{/if}
+			</label>
+		</div>
+		{$method_exists = true}
+	{/foreach}
+	
+{else}
+
+	<div class="form-field">
+		{if !$request.cart.order.shipping}
+			<label><em>Complete your shipping address to select delivery</em></label>
+		{elseif $shipping_methods.errors}
+			{foreach $shipping_methods.errors as $carrier => $error}
+				<label><em>{$error}</em></label>
+			{/foreach}
+		{else}
+			<label><em>No methods found matching your address</em></label>
+		{/if}
+	</div>
+{/if}
+
+<!-- Checkout shipping method behaviors -->
+<script type="text/javascript">
+
+	if (!window.shipping_methods_loaded)
+	{
+		// Trigger shipping method reload on shipping info change.
+		$('.checkout-shipping-info').find('input,select,textarea').live('keyup', function ()
+		{
+			clearTimeout(window.checkout_shipping_timer);
+			window.checkout_shipping_timer = setTimeout("$('.checkout-shipping-methods').trigger('reload');", 500);
+		});
+		$('.checkout-shipping-info').find('input,select,textarea').live('change', function ()
+		{
+			clearTimeout(window.checkout_shipping_timer);
+			window.checkout_shipping_timer = setTimeout("$('.checkout-shipping-methods').trigger('reload');", 500);
+		});
+		
+		// Set original zip
+		if (!$(this).data('shipping-params'))
+		{
+			$(this).data('shipping-params',
+				$('.checkout-shipping-info input.zip').val()
+				+ $('.checkout-shipping-info select.country').val()
+			);
+		}
+		
+		// Reload event.
+		$('.checkout-shipping-methods').live('reload', function ()
+		{
+			// Get zip from checkout form.
+			var zip = $('.checkout-shipping-info input.zip').val();
+			var country = $('.checkout-shipping-info select.country').val();
+			
+			if (!zip || !country) return;
+			
+			// Zip changed?
+			if ($(this).data('shipping-params') != zip+country)
+			{
+				$(this).data('shipping-params', zip+country);
+				
+				// Appear to be loading.
+				$('.checkout-shipping-methods').css({ opacity: 0.5 });
+				$(this).closest('form').data('locked', true);
+				
+				// Get shipping data for update.
+				var form_data = $('.checkout-shipping-info').find('input.zip,select.country').serialize();
+				
+				// Post updated shipping info to cart.
+				var request = $.ajax("/checkout/index.json", {
+					type: 'POST',
+					data: form_data,
+					dataType: 'json',
+					cache: false
+				});
+				
+				// Success.
+				request.done(function ()
+				{
+					$('.checkout-shipping-methods').load('/checkout/shipping-methods', function ()
+					{
+						$(this).closest('form').data('locked', false);
+						$(this).css({ opacity: '' });
+					});
+				});
+				
+				// Something went wrong.
+				request.error(function (error, text)
+				{
+					$(this).closest('form').data('locked', false);
+					$('.checkout-shipping-methods').css({ opacity: '' });
+				});
+			}
+		});
+		
+		// Remember this was loaded once.
+		window.shipping_methods_loaded = true;
+	}
+
+</script>

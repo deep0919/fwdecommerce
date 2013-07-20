@@ -1,0 +1,3 @@
+{args $id}
+{get $shipment from "/shipments/{$id}"}
+{redirect "/orders/shipment/{$shipment.order_id}/shipments/{$id}"}

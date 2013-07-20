@@ -1,0 +1,57 @@
+{extend "admin" requires_login=false}
+	
+{* Login user? *}
+{if $params.account}
+	
+	{$my_account = get("/accounts", [
+		login => $params.account, role => admin
+	])}
+	
+	{if !$my_account.errors}
+	
+		{* Save account ID in session *}
+		{$session.account_id = $my_account.id}
+		{redirect "/"}
+		
+	{else}
+		{flash error="Invalid login, try again"}
+	{/if}
+
+{else}
+
+	{* First admin? *}
+	{if !get("/accounts", [roles => "admin"])}
+		{redirect "/bootstrap"}
+	{/if}
+
+{/if}
+	
+{* Redirect logged out ajax *}
+{if $request.ajax}
+
+	<script type="text/javascript">window.location.href = "/login";</script>
+	
+{else}
+
+	<div class="row">
+		<div class="span3">
+			{render "messages"}
+			<form class="login well" action="" method="post">
+				<fieldset>
+					<div class="field email control-group">
+						<label>E-mail</label>
+						<input type="text" name="account[email]" value="{$params.account.email}" />
+					</div>
+					<div class="field password control-group">
+						<label>Password</label>
+						<input type="password" name="account[password]" />
+					</div>
+				</fieldset>
+				<div class="actions">
+					<button type="submit" class="btn btn-primary">Login</button>
+				</div>
+			</form>
+		</div>
+	</div>
+	
+{/if}

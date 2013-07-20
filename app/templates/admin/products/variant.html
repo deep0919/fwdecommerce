@@ -1,0 +1,49 @@
+{extend "admin"}
+
+{extend "default-entry" for="products"}
+
+{$id = $request.id}
+{$product = $request.entry}
+
+{$variant_id = $request.related_id}
+{$variant = $request.related_entry}
+
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{if $variant_id}{$variant.name}{$variant_id}{else}Add variant{/if} <small>/ {$product.name}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="/products/variant/{$product.id}/variants{if $variant_id}/{$variant_id}{/if}?tab=">
+		{render "messages"}
+		<div class="view-content">
+			<div class="row">
+				<div class="field control-group required span2">
+					<label>Variant name <span class="error">{$errors.name}</span></label>
+					<input type="text" name="variant[name]" value="{$variant.name}" class="focus" />
+					<input type="hidden" name="variant[:validate][required][]" value="name" />
+				</div>
+				<div class="field control-group span1">
+					<label>SKU <span class="error">{$errors.sku}</span></label>
+					<input type="text" name="variant[sku]" value="{$variant.sku}" placeholder="{$product.sku}" />
+				</div>
+				<div class="field control-group span1">
+					<label>Price <span class="error">{$errors.price}</span></label>
+					<input type="text" name="variant[price]" value="{$variant.price}" placeholder="{$product.price}" class="numeric" />
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<button type="submit" class="btn btn-primary">Save variant</button>
+			<button type="button" class="btn view-back">Back</button>
+			
+			{if $variant_id}
+				<a class="trash confirm view-link" href="/products/entry/{$product.id}/variants/{$variant_id}?variant[:delete]=true&tab=variants" data-post="true"><i class="icon-trash"></i></a>
+			{/if}
+		</div>
+	</form>
+</div>
+

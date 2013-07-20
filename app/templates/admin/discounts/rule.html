@@ -1,0 +1,123 @@
+{extend "admin"}
+
+{extend "default-entry" for="discounts"}
+
+{$id = $request.id}
+{$discount = $request.entry}
+
+{$rule_id = $request.related_id}
+{$rule = $request.related_entry}
+
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>Rule #{$rule_id} <small>/ {$discount.name}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="/discounts/rule/{$discount.id}/rules{if $rule_id}/{$rule_id}{/if}">
+		{render "messages"}
+		<div class="view-content">
+			<div class="row">
+				<div class="field control-group span2">
+					<label>Discount type <span class="error">{$errors.type}</span></label>
+					<select name="rule[type]" class="rule_type">
+						<option value="">Sub total</option>
+						<option value="product" {if $rule.type == "product"}selected="selected"{/if}>Product</option>
+						<option value="category" {if $rule.type == "category"}selected="selected"{/if}>Category</option>
+						<option value="shipping" {if $rule.type == "shipping"}selected="selected"{/if}>Shipping</option>
+					</select>
+				</div>
+				<div class="field rule_prop product hidden control-group span2">
+					<label>Product <span class="error">{$errors.product_id}</span></label>
+					<select name="rule[product_id]" disabled="disabled">
+						<option value="">Choose one...</option>
+						{foreach get("/products", [order => "is_bundle desc, name asc"]) as $product}
+							<option value="{$product.id}" {if $product.id == $rule.product_id}selected="selected"{/if}>{$product.name} {if $product.sku}({$product.sku}){/if}</option>
+						{/foreach}
+					</select>
+				</div>
+				<div class="field rule_prop category hidden control-group span2">
+					<label>Category <span class="error">{$errors.category_id}</span></label>
+					<select name="rule[category_id]" disabled="disabled">
+						<option value="">Choose one...</option>
+						{foreach get("/categories") as $category}
+							<option value="{$category.id}" {if $category.id == $rule.category_id}selected="selected"{/if}>{$category.name}</option>
+						{/foreach}
+					</select>
+				</div>
+				<div class="field rule_prop shipping hidden control-group span2">
+					<label>Shipping method <span class="error">{$errors.method}</span></label>
+					<select name="rule[method]" disabled="disabled">
+						<option value="">Any</option>
+						{foreach get("/shipments/methods") as $method}
+							<option value="{$method.name}" {if $method.name == $rule.method}selected="selected"{/if}>{$method.name}</option>
+						{/foreach}
+					</select>
+				</div>
+			</div>
+			<div class="row">
+				<div class="field control-group span2">
+					<label>Discount value ($ or %) <span class="error">{$errors.value}</span></label>
+					<input type="text" name="rule[value]" value="{$rule.value}" />
+				</div>
+				<div class="field rule_prop category hidden control-group span1">
+					<label>Limit # items? <span class="error">{$errors.limit}</span></label>
+					<input type="text" name="rule[limit]" value="{$rule.limit}" disabled="disabled" />
+				</div>
+				<div class="field rule_prop product category hidden control-group span1">
+					<label>Quantity? <span class="error">{$errors.quantity}</span></label>
+					<input type="text" name="rule[quantity]" value="{$rule.quantity}" disabled="disabled" />
+				</div>
+				{if $discount.apply_to == "code"}
+					<div class="rule_prop product hidden control-group span4 checkbox">
+						<label>
+							<input type="checkbox" name="rule[add]" value="true" {if $rule.add}checked="checked"{/if} disabled="disabled" />
+							Add to Cart when applied?	
+						</label>
+					</div>
+				{/if}
+			</div>
+			<div class="row">
+				<!-- Not yet implemented <div class="field rule_prop product category hidden control-group span2">
+					<label>Minimum quantity? <span class="error">{$errors.min_quantity}</span></label>
+					<input type="text" name="rule[min_quantity]" value="{$rule.min_quantity}" disabled="disabled" />
+				</div>-->
+				<div class="field rule_prop shipping hidden control-group span2">
+					<label>Minimum sub total? <span class="error">{$errors.min_total}</span></label>
+					<input type="text" name="rule[min_total]" value="{$rule.min_total}" disabled="disabled" />
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<button type="submit" class="btn btn-primary">Save rule</button>
+			<button type="button" class="btn view-back">Back</button>
+			{if $rule_id}
+				<a class="trash confirm view-link" href="/discounts/rule/{$discount.id}/rules/{$rule_id}?rule[:delete]=true" data-post="true"><i class="icon-trash"></i></a>
+			{/if}
+		</div>
+	</form>
+</div>
+
+<script type="text/javascript">
+
+	$('select.rule_type').change(function ()
+	{
+		$('.rule_prop').hide().find('input, select, textarea').attr('disabled', true);
+		
+		var type = $(this).val();
+		
+		if (type)
+		{
+			$('.rule_prop.'+type).fadeIn().find('input, select, textarea').attr('disabled', false);
+		}
+		
+		window.view_height = null;
+		$(window).trigger('resize');
+	})
+	.trigger('change');
+
+</script>
+

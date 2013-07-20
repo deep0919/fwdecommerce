@@ -1,0 +1,210 @@
+{extend "admin"}
+
+{extend "default-entry" for="orders"}
+
+{$id = $request.id}
+{$order = $request.entry}
+
+{$shipment_id = $request.related_id}
+{$shipment = $request.related_entry}
+
+{$errors = $request.errors}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{if $shipment_id}Shipment #{$shipment_id}{else}New shipment{/if} <small>/ Order #{$order.id}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="/orders/shipment/{$order.id}/shipments{if $shipment_id}/{$shipment_id}{/if}?tab=shipment">
+		{render "messages"}
+		<div class="view-content">
+			<input type="hidden" name="shipment[items]" value="" />
+			{if $errors.items}
+				<div class="alert alert-error">Shipment must contain at least one item</div>
+			{/if}
+			<table class="table table-condensed table-bordered">
+				<tr>
+					<th colspan="3">Items in shipment</th>
+				</tr>
+				{$ship_item_id = 0}
+				{foreach $order.items as $id => $item}
+					<tr class="{if $item.is_cancelled || $item.is_returned}strike{/if}">
+						{if $item.items}
+								<td colspan="3">
+									<b>{$item.quantity}&times;</b> {$item.name}
+								</td>
+							</tr>
+							{foreach $item.items as $i_id => $i}
+								{if $shipment.items}
+								
+									{* Item checked? *}
+									{$checked = false}
+									{foreach $shipment.items as $si_id => $si}
+										{if $id == $si.order_item_id && $i.id == $si.id}
+											{$checked = $si_id}
+											{break}
+										{/if}
+									{/foreach}
+									
+									{if $checked}
+										{$ship_item_id = $checked}
+									{else}
+										{$ship_item_id = $ship_item_id + 1}
+										{while $shipment.items[$ship_item_id]}
+											{$ship_item_id = $ship_item_id + 1}
+										{/while}
+									{/if}
+								{else}
+								
+									{* Make shipment item IDs on the fly *}
+									{$ship_item_id = $ship_item_id + 1}
+									
+									{if !$order.shipments}
+										{$checked = true}
+									{/if}
+								{/if}
+								<tr class="{if $item.is_cancelled || $item.is_returned}strike{/if}">
+									<td width="30">
+										<input type="hidden" name="shipment[items][{$ship_item_id}][order_item_id]" value="{$id}" />
+										<input type="text" name="shipment[items][{$ship_item_id}][quantity]" value="{if $checked}{$shipment.items[$checked].quantity|default:($i.quantity*$item.quantity)|default:1}{/if}" />
+									</td>
+									<td class="checkbox" width="20">
+										<input type="checkbox" name="shipment[items][{$ship_item_id}][id]" value="{$i.id}" {if $checked}checked="checked"{/if} id="ship_item_{$id}_{$i_id}" {if $item.is_cancelled || $item.is_returned}disabled="disabled"{/if} />
+									</td>
+									<td>
+										<label for="ship_item_{$id}_{$i_id}"><b>{$i.quantity*$item.quantity}&times;</b> {$i.name}</label>
+									</td>
+								</tr>
+							{/foreach}
+						{else}
+							{if $shipment.items}
+								
+								{* Item checked? *}
+								{$checked = false}
+								{foreach $shipment.items as $si_id => $si}
+									{if $id == $si.order_item_id && $item.id == $si.id}
+										{$checked = $si_id}
+										{break}
+									{/if}
+								{/foreach}
+								
+								{if $checked}
+									{$ship_item_id = $checked}
+								{else}
+									{$ship_item_id = $ship_item_id + 1}
+									{while $shipment.items[$ship_item_id]}
+										{$ship_item_id = $ship_item_id + 1}
+									{/while}
+								{/if}
+							{else}
+							
+								{* Make shipment item IDs on the fly *}
+								{$ship_item_id = $ship_item_id + 1}
+								
+								{if !$order.shipments}
+									{$checked = true}
+								{/if}
+							{/if}
+							<td width="30">
+								<input type="hidden" name="shipment[items][{$ship_item_id}][order_item_id]" value="{$id}" />
+								<input type="text" name="shipment[items][{$ship_item_id}][quantity]" value="{$shipment.items[$checked].quantity|default:$item.quantity|default:1}" />
+							</td>
+							<td class="checkbox" width="20">
+								<input type="checkbox" name="shipment[items][{$ship_item_id}][id]" value="{$item.id}" {if $checked}checked="checked"{/if} id="ship_item_{$id}" {if $item.is_cancelled || $item.is_returned}disabled="disabled"{/if} />
+							</td>
+							<td>
+								<label for="ship_item_{$id}"><b>{$item.quantity}&times;</b> {$item.name}</label>
+							</td>
+						{/if}
+					</tr>
+				{/foreach}
+				{if $order.items}
+					<tr>
+						<th colspan="3">Total weight: {$order.cart.weight}</th>
+					</tr>
+				{else}
+					<tr>
+						<td colspan="3">No items in order</td>
+					</tr>
+				{/if}
+			</table>
+			<div class="row">
+				<div class="field control-group span3">
+					<label>Shipping method <span class="error">{$errors.method}</span></label>
+					<select name="shipment[method]">
+						{$shipping_method = $shipment.method|default:$order.shipping.method}
+						{foreach get("/shipments/methods") as $method}
+							<option {if $method.name == $shipping_method}{$selected = true}selected="selected"{/if}>{$method.name}</option>
+						{/foreach}
+						{if !$selected}
+							<option selected="selected">{$shipping_method}</option>
+						{/if}
+					</select>
+				</div>
+			</div>
+			<div class="row">
+				<div class="field control-group span4">
+					<label>Tracking code <span class="error">{$errors.tracking}</span></label>
+					<input type="text" name="shipment[tracking]" value="{$shipment.tracking}" />
+				</div>
+			</div>
+			<div class="row">
+				<label class="checkbox span4">
+					<input type="checkbox" name="shipment[:email]" value="true" {if !$shipment_id}checked="checked"{/if} />
+					Notify {$order.account.email}?
+				</label>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<button type="submit" class="btn btn-primary">Save shipment</button>
+			{if $shipment.id}
+				<button type="submit" class="btn btn-success print" data-href="/orders/print/{$order.id}/shipments/{$shipment_id}">Print receipt</button>
+			{/if}
+			<button type="button" class="btn view-back">Back</button>
+			
+			{if $shipment_id}
+				{if !$shipment.is_deleted}
+					<a class="trash confirm view-link" href="/orders/shipment/{$order.id}/shipments/{$shipment_id}?shipment[:delete]=true&tab=shipment" data-post="true"><i class="icon-trash"></i></a>
+				{else}
+					<a class="trash confirm view-link" href="/orders/shipment/{$order.id}/shipments/{$shipment_id}?shipment[:restore]=true&tab=shipment" data-post="true">Undo <i class="icon-trash"></i></a>
+				{/if}
+			{/if}
+		</div>
+	</form>
+</div>
+
+<script type="text/javascript">
+
+	// Print shipment receipt.
+	$('#view button.print').click(function ()
+	{
+		$form = $(this).closest('form');
+		
+		// Save shipment first.
+		$('#view').trigger('loading');
+		
+		$.post($form.attr('action'), $form.find('input, select, textarea').serializeObject(), function (response)
+		{
+			// Reload saved view.
+			$('#view').load($form.attr('action'), function ()
+			{
+				$(window).trigger('resize');
+			});
+		});
+		
+		// Wait half a second to save, then go to print url.
+		setTimeout(function ()
+		{
+			$('#view').trigger('loading', [false]);
+			window.open("/shipments/print/{$shipment.id}", "print_shipment");
+			
+		}, 500);
+		
+		window.print_shipment = false;
+
+		return false;
+	});
+	
+</script>

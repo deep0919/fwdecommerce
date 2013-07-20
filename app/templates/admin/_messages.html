@@ -1,0 +1,28 @@
+{* Request messages *}
+<div class="view-messages">
+	{if $request.errors}
+		{foreach $request.errors as $field => $message}
+			{if $field|is_numeric && $message|is_string}
+				<div class="alert alert-error">
+					{$message}
+				</div>
+			{/if}
+		{/foreach}
+	{/if}
+	
+	{if $request.warnings}
+		{foreach $request.warnings as $message}
+			<div class="alert">
+				{$message}
+			</div>
+		{/foreach}
+	{/if}
+	
+	{if $request.notices}
+		{foreach $request.notices as $message}
+			<div class="alert alert-success">
+				{$message}
+			</div>
+		{/foreach}
+	{/if}
+</div>

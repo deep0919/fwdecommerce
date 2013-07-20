@@ -1,0 +1,130 @@
+{extend "admin"}
+
+{$for = $for|default:"orders"}
+
+{extend "default-entry" for=$for}
+
+{$id = $request.id}
+{$order = $request.entry}
+
+{$item_id = $request.related_id}
+{$item = $request.related_entry}
+
+{$errors = $request.errors}
+
+{* Get products for selection *}
+{get $all_products from "/products" [
+	order => "name ASC",
+	limit => null,
+	pricing => [roles => $order.account.roles]
+]}
+
+<div class="view-container">
+	<div class="view-header well">
+		<h2>{if $item_id}{$item.name}{else}Add item{/if} <small>/ Order #{$order.id}</small></h2>
+		<div class="actions">
+			<a class="btn view-cancel" href="">&times;</a>
+		</div>
+	</div>
+	<form class="view-body" method="post" action="/{$for}/item/{$order.id}/items{if $item_id}/{$item_id}{/if}?tab={$params.tab}">
+		{render "messages"}
+		<div class="view-content">
+			<div class="row">
+				<div class="field control-group span4">
+					<label>Product <span class="error">{$errors.id}</span></label>
+					<select name="item[id]" class="product">
+						<option value="">Choose a product...</option>
+						{foreach $all_products as $product}
+							<option value="{$product.id}" {if $product.id == $item.id}selected="selected"{/if} {if $product.variants}data-variants="{$product.variants|json_encode|htmlspecialchars}"{/if} {if $item.variant_id}data-variant-id="{$item.variant_id}"{/if}>{$product.name} &mdash; {if $product.low_price}{$product.low_price|money}-{$product.high_price|money}{else}{$product.price|money}{/if}</option>
+						{/foreach}
+						{if $item.is_deleted}
+							<option value="{$item.id}" selected="selected">{$item.name} &mdash; {$product.price|money} (deleted)</option>
+						{/if}
+					</select>
+				</div>
+			</div>
+			<div class="row variants hidden">
+				<div class="field control-group span3">
+					<label>Variant <span class="error">{$errors.variant}</span></label>
+					<select name="item[variant_id]" class="variant">
+					</select>
+				</div>
+			</div>
+			<div class="row">
+				<div class="field control-group span1">
+					{$qty = ($item.quantity > 0) ? $item.quantity : 1}
+					<label>Quantity <span class="error">{if $errors.quantity}!{/if}</span></label>
+					<input type="text" name="item[quantity]" value="{$qty}" class="numeric" />
+				</div>
+				<div class="field control-group span1">
+					<label>Price $ (each)<span class="error">{if $errors.price}!{/if}</span></label>
+					<input type="text" name="item[price]" value="{$item.price}" class="price numeric" />
+				</div>
+			</div>
+		</div>
+		<div class="view-footer actions">
+			<button type="submit" class="btn btn-primary">Save item</button>
+			{if $item.is_returned}
+				<button type="button" class="btn btn-success confirm view-link" data-href="/{$for}/entry/{$order.id}/items/{$item_id}?item[is_returned]=false&tab={$params.tab}" data-post="true">Undo return</button>
+			{elseif $item.is_cancelled}
+				<button type="button" class="btn btn-success confirm view-link" data-href="/{$for}/entry/{$order.id}/items/{$item_id}?item[is_cancelled]=false&tab={$params.tab}" data-post="true">Undo cancel</button>
+			{elseif $item_id}
+				{if $order.date_shipped}
+					<button type="button" class="btn confirm view-link" data-href="/{$for}/entry/{$order.id}/items/{$item_id}?item[is_returned]=true&tab={$params.tab}" data-post="true">Return item</button>
+				{else}
+					<button type="button" class="btn confirm view-link" data-href="/{$for}/entry/{$order.id}/items/{$item_id}?item[is_cancelled]=true&tab={$params.tab}" data-post="true">Cancel item</button>
+				{/if}
+			{/if}
+			<button type="button" class="btn view-back">Back</button>
+			
+			{if $item_id}
+				<a class="trash confirm view-link" href="/{$for}/entry/{$order.id}/items/{$item_id}?item[:delete]=true&tab={$params.tab}" data-post="true"><i class="icon-trash"></i></a>
+			{/if}
+		</div>
+	</form>
+</div>
+
+<script type="text/javascript">
+
+	$('#view select.product').change(function ()
+	{
+		var $option = $('option:selected', this);
+		
+		// Set price hint. 
+		var name = $option.text().split('$');
+		if (name[1])
+		{
+			$('#view input.price').attr('placeholder', name[1]);
+		}
+		
+		// Set variant selector (if applicable).
+		var variants = $option.data('variants');
+		if (variants != null && typeof variants == 'object')
+		{
+			$('#view select.variant').find('option').remove();
+			
+			for (var_id in variants)
+			{
+				var sel_var_id = $option.data('variant-id');
+				var selected = (sel_var_id && sel_var_id == var_id) ? 'selected="selected"' : '';
+				$('#view select.variant').append('<option value="'+var_id+'" '+selected+'>'+variants[var_id].name+'</option>');
+				
+				// Set variant price hint?
+				if (variants[var_id].price)
+				{
+					$('#view input.price').attr('placeholder', variants[var_id].price);
+				}
+			}
+			
+			$('#view .row.variants').show();
+		}
+		else
+		{
+			$('#view select.variant').find('option').remove();
+			$('#view .row.variants').hide();
+		}
+	})
+	.trigger('change');
+
+</script>
+

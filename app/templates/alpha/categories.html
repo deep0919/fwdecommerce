@@ -1,0 +1,51 @@
+{extend "session"}
+
+{args $category_slug}
+
+{* Get category by slug *}
+{if $category = "/categories/{$category_slug|urlencode}"|get}
+
+	{* One or many sub-categories *}
+	{if $category.children}
+		{$categories = $category.children}
+	{else}
+		{$categories = [$category]}
+	{/if}
+	
+	{* Get products by category *}
+	{foreach $categories as $category}
+		{$category.active_products = "/products"|get:[
+			category_ids => $category.id,
+			is_active => true,
+			limit => 100
+		]}
+	{/foreach}
+{else}
+
+	{* Not found *}
+	{render "404"}
+{/if}
+
+<div class="category-list">
+
+	{foreach $categories as $category}
+		{if !$category.active_products}
+			{continue}
+		{/if}
+		<div class="category-list-header">
+			<div class="category-list-crumbs">
+				{$parent = $category.parent}
+				{while $parent}
+					<a class="crumb" href="/categories/{$parent.slug}">
+						{$parent.name}</a> /
+					{$parent = $parent.parent}
+				{/while}
+				<a class="crumb" href="/categories/{$category.slug}">
+					{$category.name}</a>
+			</div>
+		</div>
+		
+		{* Render category products *}
+		{render "product-list" with=$category.active_products}
+	{/foreach}
+</div>

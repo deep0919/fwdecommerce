@@ -1,0 +1,39 @@
+{extend "admin"}
+
+{$query = [
+	search => $params.search,
+	where => $params.where,
+	page => $params.page
+]}
+
+{get $channels from "/channels" $query}
+
+{foreach $channels as $channel}
+	<li>
+		<div class="headline">
+			<a class="list-item" href="/channels/entry/{$channel.id}" id="item_channels_{$channel.id}"> 
+				<span class="name">{$channel.name}</span>
+			</a>
+		</div>
+		<small>
+			{pluralize "{$channel.entry_count} entries"}
+			<b class="bull">&bull;</b> {pluralize "{$channel.fields|count} fields"}
+			<span class="date">
+				{$channel.date_created|age_date}
+			</span>
+			<span class="hidden">
+				<b class="bull">&bull;</b> <a href="/entries/new/{$channel.slug}" class="view-link">New entry</a>
+				<b class="bull">&bull;</b> <a href="/entries/{$channel.slug}">View all &rarr;</a>
+			</span>
+			{if $channel.label}
+				<span class="label">
+					{$channel.label}
+				</span>
+			{/if}	
+		</small>
+	</li>
+{foreachelse}
+	<li class="empty">No channels found</li>
+{/foreach}
+
+{render "loadmore" with=$channels query=$query url="/channels"}

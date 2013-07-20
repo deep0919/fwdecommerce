@@ -1,0 +1,157 @@
+{* Alias cart order *}
+{$order = $request.cart.order}
+
+{* Get country and state options from countries() helper *}
+{$countries = countries()}
+
+<fieldset class="form-fieldset">
+	<h4 class="form-header">Shipping Address</h4>
+	<div class="checkout-shipping-info">
+		<div class="row">
+			<div class="form-field control-group span4">
+				<label>Full name</label>
+				<input type="text" class="name" name="order[name]" value="{$order.name|escape}" />
+			</div>
+		</div>
+		<div class="row">
+			<div class="form-field control-group span4">
+				<label>Address</label>
+				<input type="text" class="address" name="order[shipping][address]" value="{$order.shipping.address|escape}" />
+			</div>
+		</div>
+		<div class="row">
+			<div class="form-field control-group span2">
+				<label>City</label>
+				<input type="text" class="city" name="order[shipping][city]" value="{$order.shipping.city|escape}" />
+			</div>
+			<div class="form-field control-group span2">
+				<label>Zip code</label>
+				<input type="text" class="zip" name="order[shipping][zip]" value="{$order.shipping.zip|escape}" />
+			</div>
+		</div>
+		<div class="row">
+			<div class="form-field control-group span2">
+				<label>Country</label>
+				<select name="order[shipping][country]" class="country" id="country-select">
+					<option value="">Select...</option>
+					{foreach $countries as $country}
+						{$selected = ($country.code == $order.shipping.country)}
+						<option value="{$country.code}" {if $selected}selected="selected"{/if}>{$country.name}</option>
+					{/foreach}
+				</select>
+			</div>
+			{* State selector for all countries with states/provinces *}
+			{foreach $countries as $country}
+				{if !$country.states}
+					{continue}
+				{/if}
+				<div class="form-field control-group span2 checkout-state-list hidden" id="{$country.code}-states">
+					<label>{$country.state_label|default:"State"}</label>
+					<select name="order[shipping][state]" class="state" disabled="disabled">
+						<option value="">Select...</option>
+						{foreach $country.states as $code => $state_name}
+							{* State value as string index or array value *}
+							{$value = (($code|is_numeric) ? $state_name : $code)}
+							{$selected = ($value == $order.shipping.state)}
+							<option value="{$value}" {if $selected}selected="selected"{/if}>{$state_name}</option>
+						{/foreach}
+					</select>
+				</div>
+			{/foreach}
+			<div class="form-field control-group span2 checkout-state-default hidden">
+				<label>State/Region</label>
+				<input type="text" class="state" name="order[shipping][state]" value="{$order.shipping.state|escape}" disabled="disabled" />
+			</div>
+		</div>
+	</div>
+</fieldset>
+
+<fieldset class="form-fieldset">
+	<h4 class="form-header">Shipping Method</h4>
+	<div class="row">
+		<div class="form-field control-group">
+			<input type="hidden" class="method" name="order[shipping][method]" value="" />
+			<div class="checkout-shipping-methods span4">
+				<label><em>Loading delivery options</em></label>
+				{* Shipping methods loaded asyncronously from checkout/shipping-methods.html *}
+			</div>
+		</div>
+	</div>
+</fieldset>
+
+<fieldset class="form-fieldset">
+	<div class="row">
+		<div class="form-field control-group span4">
+			<label>E-mail address</label>
+			<input type="email" class="email" name="order[email]" value="{$order.email|escape}" />
+		</div>
+	</div>
+	<!-- Optional phone number <div class="row">
+		<div class="form-field control-group span4">
+			<label>Phone number</label>
+			<input type="tel" class="phone" name="order[phone]" value="{$order.phone|escape}" />
+		</div>
+	</div>-->
+</fieldset>
+
+<fieldset class="form-fieldset">
+	<div class="row">
+		<div class="form-field control-group span4">
+			<label>Promo code (Optional)</label>
+			<input type="text" class="coupon_code" name="coupon_code" value="{$request.cart.coupon_code|escape}" />
+		</div>
+	</div>
+</fieldset>
+
+<fieldset class="form-fieldset">
+	<div class="row">
+		<div class="form-field phone control-group span4">
+			<label>Comments (Optional)</label>
+			<textarea name="order[comments]" rows="3">{$order.comments|escape}</textarea>
+		</div>
+	</div>
+</fieldset>
+
+<!-- Checkout shipping form behaviors -->
+<script type="text/javascript">
+
+	// Country/state selector.
+	$('#country-select').change(function ()
+	{
+		// Hide/disable all state selectors.
+		$('.checkout-state-list').hide();
+		$('.checkout-state-list select').attr('disabled', true);
+		$('.checkout-state-default').hide();
+		$('.checkout-state-default input').attr('disabled', true);
+		
+		// Show/enable related input.
+		$state = $('#'+$(this).val()+'-states');
+		if ($state.length)
+		{
+			$state.find('select').attr('disabled', false);
+			$state.show();
+		}
+		else
+		{
+			// Show default input.
+			$('.checkout-state-default').show();
+			$('.checkout-state-default input').attr('disabled', false);
+		}
+	})
+	.trigger('change');
+
+	// Load shipping methods.
+	$(document).ready(function ()
+	{
+		$('.checkout-shipping-methods').closest('form').data('locked', true);
+		
+		$('.checkout-shipping-methods')
+			.css({ opacity: 0.5 })
+			.load('/checkout/shipping-methods', function ()
+			{
+				$(this).closest('form').data('locked', false);
+				$(this).css({ opacity: '' });
+			});
+	});
+	
+</script>
